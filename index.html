@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate 2D Space Sandbox by Mexocoder</title>
+    <title>Neon Sci-Fi Sandbox by Mexocoder</title>
     <style>
         html, body {
             margin: 0;
@@ -11,9 +11,9 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #020208;
+            background-color: #03020a;
             touch-action: none;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             user-select: none;
         }
         canvas {
@@ -21,11 +21,10 @@
             height: 100%;
             display: block;
         }
-        /* Стартовый экран */
         #ui-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(15,15,35,0.96) 0%, rgba(2,2,8,0.99) 100%);
+            background: radial-gradient(circle, rgba(20,10,40,0.95) 0%, rgba(2,2,10,0.99) 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -39,15 +38,16 @@
             font-size: 32px;
             letter-spacing: 4px;
             color: #00f2fe;
-            text-shadow: 0 0 20px rgba(0, 242, 254, 0.8);
+            text-shadow: 0 0 25px rgba(0, 242, 254, 0.9);
         }
         .author-tag {
             font-size: 15px;
-            color: #4facfe;
+            color: #ff007f;
             letter-spacing: 3px;
             margin-bottom: 25px;
             text-transform: uppercase;
             font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 0, 127, 0.6);
         }
         p {
             color: #a0aec0;
@@ -60,15 +60,13 @@
             padding: 16px 42px;
             font-size: 18px;
             font-weight: bold;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: #000;
+            background: linear-gradient(135deg, #ff007f 0%, #00f2fe 100%);
+            color: #fff;
             border: none;
             border-radius: 30px;
             cursor: pointer;
             box-shadow: 0 0 30px rgba(0, 242, 254, 0.6);
         }
-
-        /* Игровой HUD (Интерфейс) */
         #hud {
             position: absolute;
             top: 15px;
@@ -80,16 +78,16 @@
             display: none;
         }
         .hud-card {
-            background: rgba(10, 15, 30, 0.7);
-            border: 1px solid rgba(0, 242, 254, 0.3);
+            background: rgba(15, 10, 30, 0.75);
+            border: 1px solid rgba(0, 242, 254, 0.4);
             border-radius: 10px;
             padding: 10px 15px;
             backdrop-filter: blur(5px);
             margin-bottom: 8px;
-            box-shadow: 0 0 10px rgba(0,242,254,0.15);
+            box-shadow: 0 0 15px rgba(0,242,254,0.2);
         }
         .bar-bg {
-            width: 120px;
+            width: 110px;
             height: 8px;
             background: rgba(255,255,255,0.1);
             border-radius: 4px;
@@ -101,15 +99,14 @@
         .bar-fill-hp { width: 100%; height: 100%; background: #ff4757; transition: width 0.2s; }
         .bar-fill-shield { width: 100%; height: 100%; background: #00f2fe; transition: width 0.2s; }
 
-        /* Элементы управления для мобилок */
         #joystick-zone {
             position: absolute;
-            bottom: 30px;
-            left: 30px;
+            bottom: 35px;
+            left: 35px;
             width: 130px;
             height: 130px;
             background: rgba(255, 255, 255, 0.04);
-            border: 2px solid rgba(0, 242, 254, 0.25);
+            border: 2px solid rgba(0, 242, 254, 0.3);
             border-radius: 50%;
             z-index: 20;
             display: none;
@@ -120,14 +117,12 @@
             position: absolute;
             top: 40px; left: 40px;
             width: 50px; height: 50px;
-            background: rgba(0, 242, 254, 0.6);
-            border: 2px solid rgba(255, 255, 255, 0.6);
+            background: rgba(0, 242, 254, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.7);
             border-radius: 50%;
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.8);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.9);
             pointer-events: none;
         }
-
-        /* Кнопка огня и варпа */
         .mobile-btn {
             position: absolute;
             bottom: 35px;
@@ -139,24 +134,23 @@
             align-items: center;
             color: #fff;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 14px;
             z-index: 25;
             backdrop-filter: blur(4px);
             touch-action: none;
         }
         #fire-btn {
             right: 30px;
-            background: rgba(255, 71, 87, 0.4);
-            border: 2px solid #ff4757;
-            box-shadow: 0 0 15px rgba(255, 71, 87, 0.5);
+            background: rgba(255, 0, 127, 0.4);
+            border: 2px solid #ff007f;
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.6);
         }
         #warp-btn {
             right: 110px;
             background: rgba(0, 242, 254, 0.3);
             border: 2px solid #00f2fe;
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
         }
-
         #hide-ui-btn {
             position: absolute;
             top: 15px;
@@ -173,17 +167,16 @@
             align-items: center;
             z-index: 30;
             cursor: pointer;
-            backdrop-filter: blur(2px);
         }
     </style>
 </head>
 <body>
 
     <div id="ui-overlay">
-        <h1>2D SPACE SANDBOX</h1>
+        <h1>NEON SPACE SANDBOX</h1>
         <div class="author-tag">by Mexocoder</div>
-        <p>ПК: WASD — Движение | Пробел — Атака | Shift — Варп<br>Мобильные: Джойстик + Кнопки «Огонь» и «Варп»</p>
-        <button class="start-btn" onclick="launchGame()">НАЧАТЬ ПРИКЛЮЧЕНИЕ</button>
+        <p>Уничтожайте пиратов, исследуйте туманности и избегайте Черной Дыры!</p>
+        <button class="start-btn" onclick="launchGame()">ПОГРУЖЕНИЕ</button>
     </div>
 
     <div id="hud">
@@ -194,8 +187,8 @@
         <div class="hud-card">
             💎 КРИСТАЛЛЫ: <span id="credits-txt" style="color:#00f2fe; font-weight:bold;">0</span>
         </div>
-        <div class="hud-card" id="status-card" style="color: #4facfe;">
-            СПУТНИК В НОРМЕ
+        <div class="hud-card" id="status-card" style="color: #00f2fe;">
+            СЕКТОР: БЕЗОПАСНО
         </div>
     </div>
 
@@ -213,15 +206,15 @@
 
         let uiVisible = true;
         let isRunning = false;
+        let shakeTime = 0;
 
-        // Состояние игрока
         const player = {
             x: 0,
             y: -350,
             vx: 0,
             vy: 0,
             angle: 0,
-            speed: 0.25,
+            speed: 0.28,
             hp: 100,
             maxHp: 100,
             shield: 100,
@@ -230,39 +223,48 @@
             isWarping: false
         };
 
-        // Ввод
         const keys = {};
         let inputDir = { x: 0, y: 0 };
         let joystickPointerId = null;
         let joystickCenter = { x: 0, y: 0 };
 
-        // Игровые объекты
         let lasers = [];
+        let enemyLasers = [];
         let particles = [];
         let asteroids = [];
         let crystals = [];
+        let enemies = [];
 
-        // Звездное небо
-        const stars = Array.from({ length: 500 }, () => ({
+        // Разноцветные космические туманности (Nebulae)
+        const nebulae = [
+            { x: -600, y: -400, radius: 450, color: 'rgba(255, 0, 127, 0.15)' },
+            { x: 700, y: 500, radius: 550, color: 'rgba(0, 242, 254, 0.12)' },
+            { x: -300, y: 800, radius: 400, color: 'rgba(112, 0, 255, 0.14)' },
+            { x: 800, y: -600, radius: 500, color: 'rgba(255, 170, 0, 0.1)' }
+        ];
+
+        // Красочные звезды
+        const starColors = ['#ffffff', '#00f2fe', '#ff007f', '#ffaa00', '#7000ff'];
+        const stars = Array.from({ length: 600 }, () => ({
             x: (Math.random() - 0.5) * 5000,
             y: (Math.random() - 0.5) * 5000,
-            size: Math.random() * 2 + 0.5,
+            size: Math.random() * 2.5 + 0.5,
+            color: starColors[Math.floor(Math.random() * starColors.length)],
             alpha: Math.random() * 0.8 + 0.2
         }));
 
+        // Черная Дыра
+        const blackHole = { x: -1100, y: 900, radius: 45, gravityDist: 600 };
+
         // Планеты
         const planets = [
-            { name: 'Меркурий', radius: 140, size: 8, color: '#a0a0a0', speed: 0.015, angle: 0, mass: 20 },
-            { name: 'Венера', radius: 220, size: 13, color: '#e3bb76', speed: 0.01, angle: 1, mass: 40 },
-            { name: 'Земля', radius: 360, size: 15, color: '#00d2ff', speed: 0.007, angle: 2, mass: 50, station: true },
-            { name: 'Марс', radius: 520, size: 11, color: '#ff4d4d', speed: 0.005, angle: 3, mass: 35, station: true },
-            { name: 'Юпитер', radius: 760, size: 32, color: '#ffb366', speed: 0.003, angle: 4, mass: 180, station: true },
-            { name: 'Сатурн', radius: 1020, size: 26, color: '#e6c280', speed: 0.002, angle: 5, mass: 120, hasRings: true }
+            { name: 'Меркурий', radius: 140, size: 8, color: '#a0a0a0', speed: 0.015, angle: 0 },
+            { name: 'Венера', radius: 220, size: 13, color: '#e3bb76', speed: 0.01, angle: 1 },
+            { name: 'Земля', radius: 360, size: 15, color: '#00d2ff', speed: 0.007, angle: 2 },
+            { name: 'Марс', radius: 520, size: 11, color: '#ff4d4d', speed: 0.005, angle: 3 },
+            { name: 'Юпитер', radius: 760, size: 32, color: '#ffb366', speed: 0.003, angle: 4 },
+            { name: 'Сатурн', radius: 1020, size: 26, color: '#e6c280', speed: 0.002, angle: 5, hasRings: true }
         ];
-
-        // Солнечные вспышки
-        let flareTimer = 0;
-        let flareWave = null;
 
         function isTouchDevice() {
             return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -273,10 +275,11 @@
             canvas.height = window.innerHeight;
         }
 
-        function spawnAsteroids() {
-            for (let i = 0; i < 40; i++) {
+        function spawnWorld() {
+            // Астероиды
+            for (let i = 0; i < 45; i++) {
                 const ang = Math.random() * Math.PI * 2;
-                const dist = 580 + Math.random() * 150; // Пояс астероидов между Марсом и Юпитером
+                const dist = 560 + Math.random() * 160;
                 asteroids.push({
                     x: Math.cos(ang) * dist,
                     y: Math.sin(ang) * dist,
@@ -284,6 +287,18 @@
                     vy: (Math.random() - 0.5) * 0.5,
                     size: 12 + Math.random() * 14,
                     hp: 30
+                });
+            }
+
+            // Вражеские пираты
+            for (let i = 0; i < 4; i++) {
+                enemies.push({
+                    x: (Math.random() - 0.5) * 1200,
+                    y: (Math.random() - 0.5) * 1200,
+                    vx: 0, vy: 0,
+                    angle: 0,
+                    hp: 50,
+                    shootCooldown: 0
                 });
             }
         }
@@ -305,7 +320,7 @@
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
             setupControls();
-            spawnAsteroids();
+            spawnWorld();
 
             isRunning = true;
             requestAnimationFrame(gameLoop);
@@ -388,13 +403,13 @@
         }
 
         function fireLaser() {
-            const speed = 12;
+            const speed = 13;
             lasers.push({
                 x: player.x + Math.cos(player.angle) * 15,
                 y: player.y + Math.sin(player.angle) * 15,
                 vx: Math.cos(player.angle) * speed + player.vx,
                 vy: Math.sin(player.angle) * speed + player.vy,
-                life: 60
+                life: 55
             });
         }
 
@@ -413,7 +428,6 @@
         }
 
         function updateLogic() {
-            // Ввод движение
             if (!isTouchDevice() || (inputDir.x === 0 && inputDir.y === 0)) {
                 inputDir.x = 0; inputDir.y = 0;
                 if (keys['KeyA'] || keys['ArrowLeft']) inputDir.x -= 1;
@@ -426,30 +440,27 @@
             }
 
             const currentSpeed = player.isWarping ? player.speed * 3.5 : player.speed;
-
             player.vx += inputDir.x * currentSpeed;
             player.vy += inputDir.y * currentSpeed;
 
-            // Гравитация Солнца и Планет
-            planets.forEach(p => {
-                p.angle += p.speed * 0.5;
-                const px = Math.cos(p.angle) * p.radius;
-                const py = Math.sin(p.angle) * p.radius;
+            // Притягивание Черной Дыры
+            const dxBH = blackHole.x - player.x;
+            const dyBH = blackHole.y - player.y;
+            const distBH = Math.sqrt(dxBH * dxBH + dyBH * dyBH);
+            if (distBH < blackHole.gravityDist) {
+                const force = (1 - distBH / blackHole.gravityDist) * 0.6;
+                player.vx += (dxBH / distBH) * force;
+                player.vy += (dyBH / distBH) * force;
 
-                const dx = px - player.x;
-                const dy = py - player.y;
-                const distSq = dx * dx + dy * dy;
-                if (distSq < 20000 && distSq > 400) {
-                    const force = (p.mass / distSq) * 0.8;
-                    player.vx += (dx / Math.sqrt(distSq)) * force;
-                    player.vy += (dy / Math.sqrt(distSq)) * force;
-                }
-            });
+                document.getElementById('status-card').innerText = '⚠️ ГРАВИТАЦИОННАЯ АНОМАЛИЯ!';
+                document.getElementById('status-card').style.color = '#ff007f';
+            } else {
+                document.getElementById('status-card').innerText = 'СЕКТОР: БЕЗОПАСНО';
+                document.getElementById('status-card').style.color = '#00f2fe';
+            }
 
-            // Инерция
             player.vx *= 0.96;
             player.vy *= 0.96;
-
             player.x += player.vx;
             player.y += player.vy;
 
@@ -457,62 +468,91 @@
                 player.angle = Math.atan2(player.vy, player.vx);
             }
 
-            // Восстановление щитов
             if (player.shield < player.maxShield) player.shield += 0.05;
 
-            // Солнечные вспышки
-            flareTimer++;
-            if (flareTimer > 600) {
-                flareTimer = 0;
-                flareWave = { radius: 40, maxRadius: 1200, speed: 6 };
-                document.getElementById('status-card').innerText = '⚠️ СОЛНЕЧНАЯ ВСПЫШКА!';
-                document.getElementById('status-card').style.color = '#ff4757';
-            }
+            // Логика пиратов (AI)
+            enemies.forEach((e, eIdx) => {
+                const dx = player.x - e.x;
+                const dy = player.y - e.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
 
-            if (flareWave) {
-                flareWave.radius += flareWave.speed;
-                const distToSun = Math.sqrt(player.x * player.x + player.y * player.y);
-                if (Math.abs(distToSun - flareWave.radius) < 30) {
-                    if (player.shield > 0) player.shield -= 0.8;
-                    else player.hp -= 0.4;
+                if (dist < 500) {
+                    e.angle = Math.atan2(dy, dx);
+                    e.vx += Math.cos(e.angle) * 0.12;
+                    e.vy += Math.sin(e.angle) * 0.12;
+
+                    // Стрельба по игроку
+                    e.shootCooldown++;
+                    if (e.shootCooldown > 70 && dist < 350) {
+                        e.shootCooldown = 0;
+                        enemyLasers.push({
+                            x: e.x, y: e.y,
+                            vx: Math.cos(e.angle) * 8,
+                            vy: Math.sin(e.angle) * 8,
+                            life: 60
+                        });
+                    }
                 }
-                if (flareWave.radius > flareWave.maxRadius) {
-                    flareWave = null;
-                    document.getElementById('status-card').innerText = 'СПУТНИК В НОРМЕ';
-                    document.getElementById('status-card').style.color = '#4facfe';
-                }
-            }
 
-            // Лазеры
-            lasers.forEach((l, idx) => {
-                l.x += l.vx;
-                l.y += l.vy;
-                l.life--;
+                e.vx *= 0.95; e.vy *= 0.95;
+                e.x += e.vx; e.y += e.vy;
+            });
 
-                // Попадание по астероидам
+            // Попадания лазеров игрока
+            lasers.forEach((l) => {
+                l.x += l.vx; l.y += l.vy; l.life--;
+
+                // Попадания в астероиды
                 asteroids.forEach((ast, aIdx) => {
-                    const dx = l.x - ast.x;
-                    const dy = l.y - ast.y;
+                    const dx = l.x - ast.x; const dy = l.y - ast.y;
                     if (dx * dx + dy * dy < ast.size * ast.size) {
-                        ast.hp -= 15;
-                        l.life = 0;
-                        createExplosion(l.x, l.y, '#00f2fe', 4);
+                        ast.hp -= 15; l.life = 0;
+                        shakeTime = 4;
+                        createExplosion(l.x, l.y, '#00f2fe', 5);
 
                         if (ast.hp <= 0) {
                             createExplosion(ast.x, ast.y, '#a0a0a0', 12);
-                            // Выпадение кристаллов
                             crystals.push({ x: ast.x, y: ast.y, value: Math.floor(Math.random() * 10) + 5 });
                             asteroids.splice(aIdx, 1);
+                        }
+                    }
+                });
+
+                // Попадания во врагов
+                enemies.forEach((en, eIdx) => {
+                    const dx = l.x - en.x; const dy = l.y - en.y;
+                    if (dx * dx + dy * dy < 400) {
+                        en.hp -= 20; l.life = 0;
+                        shakeTime = 6;
+                        createExplosion(l.x, l.y, '#ff007f', 6);
+
+                        if (en.hp <= 0) {
+                            createExplosion(en.x, en.y, '#ff007f', 20);
+                            crystals.push({ x: en.x, y: en.y, value: 40 });
+                            enemies.splice(eIdx, 1);
                         }
                     }
                 });
             });
             lasers = lasers.filter(l => l.life > 0);
 
+            // Попадания лазеров врагов в игрока
+            enemyLasers.forEach((el) => {
+                el.x += el.vx; el.y += el.vy; el.life--;
+                const dx = el.x - player.x; const dy = el.y - player.y;
+                if (dx * dx + dy * dy < 250) {
+                    el.life = 0;
+                    shakeTime = 8;
+                    if (player.shield > 0) player.shield -= 15;
+                    else player.hp -= 10;
+                    createExplosion(player.x, player.y, '#ff4757', 8);
+                }
+            });
+            enemyLasers = enemyLasers.filter(el => el.life > 0);
+
             // Сбор кристаллов
             crystals.forEach((c, cIdx) => {
-                const dx = player.x - c.x;
-                const dy = player.y - c.y;
+                const dx = player.x - c.x; const dy = player.y - c.y;
                 if (dx * dx + dy * dy < 900) {
                     player.credits += c.value;
                     createExplosion(c.x, c.y, '#00f2fe', 6);
@@ -520,74 +560,97 @@
                 }
             });
 
-            // Обновление частиц
-            particles.forEach(p => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life--;
-            });
+            particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
             particles = particles.filter(p => p.life > 0);
 
-            // Обновление UI
-            document.getElementById('shield-bar').style.width = (player.shield / player.maxShield * 100) + '%';
-            document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + '%';
+            planets.forEach(p => p.angle += p.speed * 0.5);
+
+            document.getElementById('shield-bar').style.width = Math.max(0, player.shield / player.maxShield * 100) + '%';
+            document.getElementById('hp-bar').style.width = Math.max(0, player.hp / player.maxHp * 100) + '%';
             document.getElementById('credits-txt').innerText = player.credits;
         }
 
         function render() {
-            ctx.fillStyle = '#020208';
+            // Градиентный космический фон вместо чисто черного
+            const bgGradient = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 100,
+                canvas.width / 2, canvas.height / 2, 1000
+            );
+            bgGradient.addColorStop(0, '#0a0518');
+            bgGradient.addColorStop(1, '#020106');
+            ctx.fillStyle = bgGradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.save();
-            ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-            // 1. Звезды
+            // Эффект тряски экрана при попадании
+            let shakeX = 0, shakeY = 0;
+            if (shakeTime > 0) {
+                shakeX = (Math.random() - 0.5) * shakeTime * 2;
+                shakeY = (Math.random() - 0.5) * shakeTime * 2;
+                shakeTime--;
+            }
+
+            ctx.translate(canvas.width / 2 - player.x + shakeX, canvas.height / 2 - player.y + shakeY);
+
+            // 1. Неоновые Космические Туманности (Nebula)
+            nebulae.forEach(n => {
+                const grad = ctx.createRadialGradient(n.x, n.y, 10, n.x, n.y, n.radius);
+                grad.addColorStop(0, n.color);
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 2. Цветные Звезды
             stars.forEach(s => {
-                ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+                ctx.fillStyle = s.color;
+                ctx.globalAlpha = s.alpha;
                 ctx.beginPath();
                 ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
                 ctx.fill();
             });
+            ctx.globalAlpha = 1.0;
 
-            // 2. Орбиты
+            // 3. Черная Дыра
+            const bhGrad = ctx.createRadialGradient(blackHole.x, blackHole.y, 10, blackHole.x, blackHole.y, blackHole.radius * 2);
+            bhGrad.addColorStop(0, '#000000');
+            bhGrad.addColorStop(0.5, '#ff007f');
+            bhGrad.addColorStop(1, 'rgba(0,242,254,0)');
+            ctx.fillStyle = bhGrad;
+            ctx.beginPath();
+            ctx.arc(blackHole.x, blackHole.y, blackHole.radius * 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(blackHole.x, blackHole.y, blackHole.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 4. Орбиты
             planets.forEach(p => {
-                ctx.strokeStyle = 'rgba(0, 242, 254, 0.06)';
+                ctx.strokeStyle = 'rgba(0, 242, 254, 0.08)';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
                 ctx.stroke();
             });
 
-            // 3. Солнечная волна
-            if (flareWave) {
-                ctx.strokeStyle = 'rgba(255, 71, 87, 0.5)';
-                ctx.lineWidth = 8;
-                ctx.shadowColor = '#ff4757';
-                ctx.shadowBlur = 20;
-                ctx.beginPath();
-                ctx.arc(0, 0, flareWave.radius, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-            }
-
-            // 4. Солнце
-            const sunGlow = ctx.createRadialGradient(0, 0, 10, 0, 0, 100);
+            // 5. Солнце
+            const sunGlow = ctx.createRadialGradient(0, 0, 10, 0, 0, 110);
             sunGlow.addColorStop(0, '#ffffff');
             sunGlow.addColorStop(0.2, '#ffaa00');
-            sunGlow.addColorStop(0.6, 'rgba(255, 69, 0, 0.4)');
+            sunGlow.addColorStop(0.6, 'rgba(255, 0, 127, 0.35)');
             sunGlow.addColorStop(1, 'rgba(255, 69, 0, 0)');
-
             ctx.fillStyle = sunGlow;
-            ctx.beginPath();
-            ctx.arc(0, 0, 100, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 0, 110, 0, Math.PI * 2); ctx.fill();
 
             ctx.fillStyle = '#ffcc00';
-            ctx.beginPath();
-            ctx.arc(0, 0, 40, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 0, 38, 0, Math.PI * 2); ctx.fill();
 
-            // 5. Планеты
+            // 6. Планеты
             planets.forEach(p => {
                 const px = Math.cos(p.angle) * p.radius;
                 const py = Math.sin(p.angle) * p.radius;
@@ -595,98 +658,84 @@
                 if (p.hasRings) {
                     ctx.strokeStyle = 'rgba(230, 194, 128, 0.4)';
                     ctx.lineWidth = 8;
-                    ctx.beginPath();
-                    ctx.arc(px, py, p.size * 1.8, 0, Math.PI * 2);
-                    ctx.stroke();
+                    ctx.beginPath(); ctx.arc(px, py, p.size * 1.8, 0, Math.PI * 2); ctx.stroke();
                 }
 
                 ctx.fillStyle = p.color;
                 ctx.shadowColor = p.color;
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.arc(px, py, p.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.shadowBlur = 12;
+                ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2); ctx.fill();
                 ctx.shadowBlur = 0;
-
-                // Космические станции
-                if (p.station) {
-                    const stX = px + Math.cos(p.angle * 2) * (p.size + 18);
-                    const stY = py + Math.sin(p.angle * 2) * (p.size + 18);
-                    ctx.fillStyle = '#00f2fe';
-                    ctx.fillRect(stX - 3, stY - 3, 6, 6);
-                }
             });
 
-            // 6. Астероиды
-            ctx.fillStyle = '#888888';
+            // 7. Пираты
+            enemies.forEach(e => {
+                ctx.save();
+                ctx.translate(e.x, e.y);
+                ctx.rotate(e.angle);
+
+                ctx.fillStyle = '#ff007f';
+                ctx.shadowColor = '#ff007f';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.moveTo(14, 0); ctx.lineTo(-10, -8); ctx.lineTo(-10, 8);
+                ctx.closePath(); ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.restore();
+            });
+
+            // 8. Астероиды
+            ctx.fillStyle = '#7a7a9a';
             asteroids.forEach(ast => {
-                ctx.beginPath();
-                ctx.arc(ast.x, ast.y, ast.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(ast.x, ast.y, ast.size, 0, Math.PI * 2); ctx.fill();
             });
 
-            // 7. Кристаллы
+            // 9. Кристаллы
             ctx.fillStyle = '#00f2fe';
-            ctx.shadowColor = '#00f2fe';
-            ctx.shadowBlur = 10;
-            crystals.forEach(c => {
-                ctx.fillRect(c.x - 3, c.y - 3, 6, 6);
-            });
+            ctx.shadowColor = '#00f2fe'; ctx.shadowBlur = 10;
+            crystals.forEach(c => ctx.fillRect(c.x - 3, c.y - 3, 6, 6));
             ctx.shadowBlur = 0;
 
-            // 8. Лазеры
-            ctx.strokeStyle = '#00f2fe';
-            ctx.lineWidth = 3;
-            ctx.shadowColor = '#00f2fe';
-            ctx.shadowBlur = 12;
+            // 10. Лазеры
+            ctx.strokeStyle = '#00f2fe'; ctx.lineWidth = 3;
+            ctx.shadowColor = '#00f2fe'; ctx.shadowBlur = 12;
             lasers.forEach(l => {
-                ctx.beginPath();
-                ctx.moveTo(l.x, l.y);
-                ctx.lineTo(l.x - l.vx * 1.5, l.y - l.vy * 1.5);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(l.x, l.y); ctx.lineTo(l.x - l.vx * 1.5, l.y - l.vy * 1.5); ctx.stroke();
+            });
+
+            ctx.strokeStyle = '#ff007f'; ctx.shadowColor = '#ff007f';
+            enemyLasers.forEach(el => {
+                ctx.beginPath(); ctx.moveTo(el.x, el.y); ctx.lineTo(el.x - el.vx * 1.5, el.y - el.vy * 1.5); ctx.stroke();
             });
             ctx.shadowBlur = 0;
 
-            // 9. Частицы
+            // 11. Частицы
             particles.forEach(p => {
                 ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill();
             });
 
-            // 10. Корабль игрока
+            // 12. Корабль игрока
             ctx.save();
             ctx.translate(player.x, player.y);
             ctx.rotate(player.angle);
 
-            // Выхлоп двигателя
             if (Math.abs(player.vx) > 0.1 || Math.abs(player.vy) > 0.1) {
-                ctx.fillStyle = player.isWarping ? '#00f2fe' : '#ff4757';
-                ctx.shadowColor = player.isWarping ? '#00f2fe' : '#ff4757';
+                ctx.fillStyle = player.isWarping ? '#00f2fe' : '#ff007f';
+                ctx.shadowColor = player.isWarping ? '#00f2fe' : '#ff007f';
                 ctx.shadowBlur = 15;
                 ctx.beginPath();
-                ctx.moveTo(-12, -6);
-                ctx.lineTo(-24 - Math.random() * 10, 0);
-                ctx.lineTo(-12, 6);
-                ctx.closePath();
-                ctx.fill();
+                ctx.moveTo(-12, -6); ctx.lineTo(-26 - Math.random() * 10, 0); ctx.lineTo(-12, 6);
+                ctx.closePath(); ctx.fill();
             }
 
-            // Корпус
             ctx.fillStyle = '#00f2fe';
-            ctx.shadowColor = '#00f2fe';
-            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#00f2fe'; ctx.shadowBlur = 15;
             ctx.beginPath();
-            ctx.moveTo(18, 0);
-            ctx.lineTo(-12, -11);
-            ctx.lineTo(-6, 0);
-            ctx.lineTo(-12, 11);
-            ctx.closePath();
-            ctx.fill();
+            ctx.moveTo(18, 0); ctx.lineTo(-12, -11); ctx.lineTo(-6, 0); ctx.lineTo(-12, 11);
+            ctx.closePath(); ctx.fill();
 
             ctx.restore();
-
             ctx.restore();
         }
 
