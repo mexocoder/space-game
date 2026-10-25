@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2D Solar System by Mexocoder</title>
+    <title>Ultimate 2D Space Sandbox by Mexocoder</title>
     <style>
         html, body {
             margin: 0;
@@ -13,7 +13,7 @@
             overflow: hidden;
             background-color: #020208;
             touch-action: none;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
         }
         canvas {
@@ -25,7 +25,7 @@
         #ui-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(15,15,35,0.95) 0%, rgba(2,2,8,0.98) 100%);
+            background: radial-gradient(circle, rgba(15,15,35,0.96) 0%, rgba(2,2,8,0.99) 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -36,15 +36,15 @@
         }
         h1 {
             margin: 0 0 5px 0;
-            font-size: 28px;
-            letter-spacing: 3px;
+            font-size: 32px;
+            letter-spacing: 4px;
             color: #00f2fe;
-            text-shadow: 0 0 15px rgba(0, 242, 254, 0.6);
+            text-shadow: 0 0 20px rgba(0, 242, 254, 0.8);
         }
         .author-tag {
-            font-size: 14px;
+            font-size: 15px;
             color: #4facfe;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
             margin-bottom: 25px;
             text-transform: uppercase;
             font-weight: bold;
@@ -54,29 +54,62 @@
             margin-bottom: 30px;
             font-size: 14px;
             text-align: center;
-            line-height: 1.5;
+            line-height: 1.6;
         }
         button.start-btn {
-            padding: 16px 38px;
-            font-size: 16px;
+            padding: 16px 42px;
+            font-size: 18px;
             font-weight: bold;
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: #000;
             border: none;
             border-radius: 30px;
             cursor: pointer;
-            box-shadow: 0 0 25px rgba(0, 242, 254, 0.5);
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.6);
         }
 
-        /* Визуальный джойстик */
+        /* Игровой HUD (Интерфейс) */
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #fff;
+            z-index: 10;
+            font-size: 13px;
+            pointer-events: none;
+            display: none;
+        }
+        .hud-card {
+            background: rgba(10, 15, 30, 0.7);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 10px;
+            padding: 10px 15px;
+            backdrop-filter: blur(5px);
+            margin-bottom: 8px;
+            box-shadow: 0 0 10px rgba(0,242,254,0.15);
+        }
+        .bar-bg {
+            width: 120px;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        .bar-fill-hp { width: 100%; height: 100%; background: #ff4757; transition: width 0.2s; }
+        .bar-fill-shield { width: 100%; height: 100%; background: #00f2fe; transition: width 0.2s; }
+
+        /* Элементы управления для мобилок */
         #joystick-zone {
             position: absolute;
-            bottom: 35px;
-            left: 35px;
+            bottom: 30px;
+            left: 30px;
             width: 130px;
             height: 130px;
             background: rgba(255, 255, 255, 0.04);
-            border: 2px solid rgba(0, 242, 254, 0.2);
+            border: 2px solid rgba(0, 242, 254, 0.25);
             border-radius: 50%;
             z-index: 20;
             display: none;
@@ -94,7 +127,36 @@
             pointer-events: none;
         }
 
-        /* Кнопка скрытия UI */
+        /* Кнопка огня и варпа */
+        .mobile-btn {
+            position: absolute;
+            bottom: 35px;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 13px;
+            z-index: 25;
+            backdrop-filter: blur(4px);
+            touch-action: none;
+        }
+        #fire-btn {
+            right: 30px;
+            background: rgba(255, 71, 87, 0.4);
+            border: 2px solid #ff4757;
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.5);
+        }
+        #warp-btn {
+            right: 110px;
+            background: rgba(0, 242, 254, 0.3);
+            border: 2px solid #00f2fe;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+        }
+
         #hide-ui-btn {
             position: absolute;
             top: 15px;
@@ -112,24 +174,36 @@
             z-index: 30;
             cursor: pointer;
             backdrop-filter: blur(2px);
-            transition: opacity 0.3s ease;
         }
     </style>
 </head>
 <body>
 
     <div id="ui-overlay">
-        <h1>2D SPACE EXPLORER</h1>
+        <h1>2D SPACE SANDBOX</h1>
         <div class="author-tag">by Mexocoder</div>
-        <p>ПК: WASD / Стрелки<br>Мобильные: Удобный джойстик</p>
-        <button class="start-btn" onclick="launchGame()">ИССЛЕДОВАТЬ</button>
+        <p>ПК: WASD — Движение | Пробел — Атака | Shift — Варп<br>Мобильные: Джойстик + Кнопки «Огонь» и «Варп»</p>
+        <button class="start-btn" onclick="launchGame()">НАЧАТЬ ПРИКЛЮЧЕНИЕ</button>
+    </div>
+
+    <div id="hud">
+        <div class="hud-card">
+            <div>ЩИТЫ: <div class="bar-bg"><div id="shield-bar" class="bar-fill-shield"></div></div></div>
+            <div style="margin-top: 4px;">КОРПУС: <div class="bar-bg"><div id="hp-bar" class="bar-fill-hp"></div></div></div>
+        </div>
+        <div class="hud-card">
+            💎 КРИСТАЛЛЫ: <span id="credits-txt" style="color:#00f2fe; font-weight:bold;">0</span>
+        </div>
+        <div class="hud-card" id="status-card" style="color: #4facfe;">
+            СПУТНИК В НОРМЕ
+        </div>
     </div>
 
     <div id="hide-ui-btn" onclick="toggleUI()">👁</div>
 
-    <div id="joystick-zone">
-        <div id="joystick-stick"></div>
-    </div>
+    <div id="joystick-zone"><div id="joystick-stick"></div></div>
+    <div id="fire-btn" class="mobile-btn">🔥</div>
+    <div id="warp-btn" class="mobile-btn">⚡</div>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -140,45 +214,55 @@
         let uiVisible = true;
         let isRunning = false;
 
-        // Позиция и физика корабля
-        const ship = {
+        // Состояние игрока
+        const player = {
             x: 0,
-            y: -350, // Старт возле Земли
+            y: -350,
             vx: 0,
             vy: 0,
             angle: 0,
-            speed: 6,
-            radius: 12
+            speed: 0.25,
+            hp: 100,
+            maxHp: 100,
+            shield: 100,
+            maxShield: 100,
+            credits: 0,
+            isWarping: false
         };
 
-        // Ввод (WASD / Джойстик)
+        // Ввод
         const keys = {};
         let inputDir = { x: 0, y: 0 };
-
-        // Джойстик
         let joystickPointerId = null;
         let joystickCenter = { x: 0, y: 0 };
 
-        // Звездный фон
-        const stars = [];
-        for (let i = 0; i < 400; i++) {
-            stars.push({
-                x: (Math.random() - 0.5) * 4000,
-                y: (Math.random() - 0.5) * 4000,
-                size: Math.random() * 2 + 0.5,
-                alpha: Math.random() * 0.8 + 0.2
-            });
-        }
+        // Игровые объекты
+        let lasers = [];
+        let particles = [];
+        let asteroids = [];
+        let crystals = [];
 
-        // Солнечная система
+        // Звездное небо
+        const stars = Array.from({ length: 500 }, () => ({
+            x: (Math.random() - 0.5) * 5000,
+            y: (Math.random() - 0.5) * 5000,
+            size: Math.random() * 2 + 0.5,
+            alpha: Math.random() * 0.8 + 0.2
+        }));
+
+        // Планеты
         const planets = [
-            { name: 'Меркурий', radius: 120, size: 7, color: '#a0a0a0', speed: 0.02, angle: Math.random() * Math.PI * 2 },
-            { name: 'Венера', radius: 200, size: 12, color: '#e3bb76', speed: 0.014, angle: Math.random() * Math.PI * 2 },
-            { name: 'Земля', radius: 320, size: 14, color: '#00d2ff', speed: 0.01, angle: Math.random() * Math.PI * 2, hasMoon: true },
-            { name: 'Марс', radius: 460, size: 10, color: '#ff4d4d', speed: 0.007, angle: Math.random() * Math.PI * 2 },
-            { name: 'Юпитер', radius: 680, size: 30, color: '#ffb366', speed: 0.004, angle: Math.random() * Math.PI * 2 },
-            { name: 'Сатурн', radius: 920, size: 24, color: '#e6c280', speed: 0.0025, angle: Math.random() * Math.PI * 2, hasRings: true }
+            { name: 'Меркурий', radius: 140, size: 8, color: '#a0a0a0', speed: 0.015, angle: 0, mass: 20 },
+            { name: 'Венера', radius: 220, size: 13, color: '#e3bb76', speed: 0.01, angle: 1, mass: 40 },
+            { name: 'Земля', radius: 360, size: 15, color: '#00d2ff', speed: 0.007, angle: 2, mass: 50, station: true },
+            { name: 'Марс', radius: 520, size: 11, color: '#ff4d4d', speed: 0.005, angle: 3, mass: 35, station: true },
+            { name: 'Юпитер', radius: 760, size: 32, color: '#ffb366', speed: 0.003, angle: 4, mass: 180, station: true },
+            { name: 'Сатурн', radius: 1020, size: 26, color: '#e6c280', speed: 0.002, angle: 5, mass: 120, hasRings: true }
         ];
+
+        // Солнечные вспышки
+        let flareTimer = 0;
+        let flareWave = null;
 
         function isTouchDevice() {
             return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -187,6 +271,21 @@
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+        }
+
+        function spawnAsteroids() {
+            for (let i = 0; i < 40; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const dist = 580 + Math.random() * 150; // Пояс астероидов между Марсом и Юпитером
+                asteroids.push({
+                    x: Math.cos(ang) * dist,
+                    y: Math.sin(ang) * dist,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    size: 12 + Math.random() * 14,
+                    hp: 30
+                });
+            }
         }
 
         function launchGame() {
@@ -198,11 +297,15 @@
 
             const overlay = document.getElementById('ui-overlay');
             overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 600);
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                document.getElementById('hud').style.display = 'block';
+            }, 600);
 
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
             setupControls();
+            spawnAsteroids();
 
             isRunning = true;
             requestAnimationFrame(gameLoop);
@@ -212,20 +315,33 @@
             uiVisible = !uiVisible;
             if (isTouchDevice()) {
                 document.getElementById('joystick-zone').style.display = uiVisible ? 'block' : 'none';
+                document.getElementById('fire-btn').style.display = uiVisible ? 'flex' : 'none';
+                document.getElementById('warp-btn').style.display = uiVisible ? 'flex' : 'none';
             }
             document.getElementById('hide-ui-btn').style.opacity = uiVisible ? '0.4' : '0.05';
         }
 
         function setupControls() {
-            // Клавиатура (ПК)
-            window.addEventListener('keydown', e => keys[e.code] = true);
-            window.addEventListener('keyup', e => keys[e.code] = false);
+            window.addEventListener('keydown', e => {
+                keys[e.code] = true;
+                if (e.code === 'Space') fireLaser();
+                if (e.code === 'ShiftLeft') player.isWarping = true;
+            });
 
-            // Джойстик (Мобильные)
+            window.addEventListener('keyup', e => {
+                keys[e.code] = false;
+                if (e.code === 'ShiftLeft') player.isWarping = false;
+            });
+
             if (isTouchDevice()) {
                 const zone = document.getElementById('joystick-zone');
                 const stick = document.getElementById('joystick-stick');
+                const fireBtn = document.getElementById('fire-btn');
+                const warpBtn = document.getElementById('warp-btn');
+
                 zone.style.display = 'block';
+                fireBtn.style.display = 'flex';
+                warpBtn.style.display = 'flex';
 
                 zone.addEventListener('pointerdown', e => {
                     joystickPointerId = e.pointerId;
@@ -236,9 +352,7 @@
                 });
 
                 zone.addEventListener('pointermove', e => {
-                    if (e.pointerId === joystickPointerId) {
-                        updateJoystick(e.clientX, e.clientY, stick);
-                    }
+                    if (e.pointerId === joystickPointerId) updateJoystick(e.clientX, e.clientY, stick);
                 });
 
                 const endJoystick = e => {
@@ -251,6 +365,10 @@
 
                 zone.addEventListener('pointerup', endJoystick);
                 zone.addEventListener('pointercancel', endJoystick);
+
+                fireBtn.addEventListener('pointerdown', e => { e.preventDefault(); fireLaser(); });
+                warpBtn.addEventListener('pointerdown', e => { e.preventDefault(); player.isWarping = true; });
+                warpBtn.addEventListener('pointerup', e => { e.preventDefault(); player.isWarping = false; });
             }
         }
 
@@ -269,42 +387,151 @@
             inputDir.y = stickY / 42;
         }
 
+        function fireLaser() {
+            const speed = 12;
+            lasers.push({
+                x: player.x + Math.cos(player.angle) * 15,
+                y: player.y + Math.sin(player.angle) * 15,
+                vx: Math.cos(player.angle) * speed + player.vx,
+                vy: Math.sin(player.angle) * speed + player.vy,
+                life: 60
+            });
+        }
+
+        function createExplosion(x, y, color, count = 12) {
+            for (let i = 0; i < count; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const spd = Math.random() * 4 + 1;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(ang) * spd,
+                    vy: Math.sin(ang) * spd,
+                    color,
+                    life: 25 + Math.random() * 15
+                });
+            }
+        }
+
         function updateLogic() {
-            // Ввод с ПК (WASD)
+            // Ввод движение
             if (!isTouchDevice() || (inputDir.x === 0 && inputDir.y === 0)) {
-                inputDir.x = 0;
-                inputDir.y = 0;
+                inputDir.x = 0; inputDir.y = 0;
                 if (keys['KeyA'] || keys['ArrowLeft']) inputDir.x -= 1;
                 if (keys['KeyD'] || keys['ArrowRight']) inputDir.x += 1;
                 if (keys['KeyW'] || keys['ArrowUp']) inputDir.y -= 1;
                 if (keys['KeyS'] || keys['ArrowDown']) inputDir.y += 1;
 
-                // Нормализация вектора по диагонали
                 const len = Math.sqrt(inputDir.x * inputDir.x + inputDir.y * inputDir.y);
-                if (len > 0) {
-                    inputDir.x /= len;
-                    inputDir.y /= len;
+                if (len > 0) { inputDir.x /= len; inputDir.y /= len; }
+            }
+
+            const currentSpeed = player.isWarping ? player.speed * 3.5 : player.speed;
+
+            player.vx += inputDir.x * currentSpeed;
+            player.vy += inputDir.y * currentSpeed;
+
+            // Гравитация Солнца и Планет
+            planets.forEach(p => {
+                p.angle += p.speed * 0.5;
+                const px = Math.cos(p.angle) * p.radius;
+                const py = Math.sin(p.angle) * p.radius;
+
+                const dx = px - player.x;
+                const dy = py - player.y;
+                const distSq = dx * dx + dy * dy;
+                if (distSq < 20000 && distSq > 400) {
+                    const force = (p.mass / distSq) * 0.8;
+                    player.vx += (dx / Math.sqrt(distSq)) * force;
+                    player.vy += (dy / Math.sqrt(distSq)) * force;
+                }
+            });
+
+            // Инерция
+            player.vx *= 0.96;
+            player.vy *= 0.96;
+
+            player.x += player.vx;
+            player.y += player.vy;
+
+            if (Math.abs(player.vx) > 0.1 || Math.abs(player.vy) > 0.1) {
+                player.angle = Math.atan2(player.vy, player.vx);
+            }
+
+            // Восстановление щитов
+            if (player.shield < player.maxShield) player.shield += 0.05;
+
+            // Солнечные вспышки
+            flareTimer++;
+            if (flareTimer > 600) {
+                flareTimer = 0;
+                flareWave = { radius: 40, maxRadius: 1200, speed: 6 };
+                document.getElementById('status-card').innerText = '⚠️ СОЛНЕЧНАЯ ВСПЫШКА!';
+                document.getElementById('status-card').style.color = '#ff4757';
+            }
+
+            if (flareWave) {
+                flareWave.radius += flareWave.speed;
+                const distToSun = Math.sqrt(player.x * player.x + player.y * player.y);
+                if (Math.abs(distToSun - flareWave.radius) < 30) {
+                    if (player.shield > 0) player.shield -= 0.8;
+                    else player.hp -= 0.4;
+                }
+                if (flareWave.radius > flareWave.maxRadius) {
+                    flareWave = null;
+                    document.getElementById('status-card').innerText = 'СПУТНИК В НОРМЕ';
+                    document.getElementById('status-card').style.color = '#4facfe';
                 }
             }
 
-            // Плавный занос и движение корабля
-            ship.vx += inputDir.x * ship.speed * 0.15;
-            ship.vy += inputDir.y * ship.speed * 0.15;
-            ship.vx *= 0.92;
-            ship.vy *= 0.92;
+            // Лазеры
+            lasers.forEach((l, idx) => {
+                l.x += l.vx;
+                l.y += l.vy;
+                l.life--;
 
-            ship.x += ship.vx;
-            ship.y += ship.vy;
+                // Попадание по астероидам
+                asteroids.forEach((ast, aIdx) => {
+                    const dx = l.x - ast.x;
+                    const dy = l.y - ast.y;
+                    if (dx * dx + dy * dy < ast.size * ast.size) {
+                        ast.hp -= 15;
+                        l.life = 0;
+                        createExplosion(l.x, l.y, '#00f2fe', 4);
 
-            // Поворот носа корабля по ходу движения
-            if (Math.abs(ship.vx) > 0.1 || Math.abs(ship.vy) > 0.1) {
-                ship.angle = Math.atan2(ship.vy, ship.vx);
-            }
-
-            // Движение планет по орбитам
-            planets.forEach(p => {
-                p.angle += p.speed * 0.5;
+                        if (ast.hp <= 0) {
+                            createExplosion(ast.x, ast.y, '#a0a0a0', 12);
+                            // Выпадение кристаллов
+                            crystals.push({ x: ast.x, y: ast.y, value: Math.floor(Math.random() * 10) + 5 });
+                            asteroids.splice(aIdx, 1);
+                        }
+                    }
+                });
             });
+            lasers = lasers.filter(l => l.life > 0);
+
+            // Сбор кристаллов
+            crystals.forEach((c, cIdx) => {
+                const dx = player.x - c.x;
+                const dy = player.y - c.y;
+                if (dx * dx + dy * dy < 900) {
+                    player.credits += c.value;
+                    createExplosion(c.x, c.y, '#00f2fe', 6);
+                    crystals.splice(cIdx, 1);
+                }
+            });
+
+            // Обновление частиц
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+            });
+            particles = particles.filter(p => p.life > 0);
+
+            // Обновление UI
+            document.getElementById('shield-bar').style.width = (player.shield / player.maxShield * 100) + '%';
+            document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + '%';
+            document.getElementById('credits-txt').innerText = player.credits;
         }
 
         function render() {
@@ -312,10 +539,9 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.save();
-            // Камера следит за кораблем
-            ctx.translate(canvas.width / 2 - ship.x, canvas.height / 2 - ship.y);
+            ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-            // 1. Звезды на заднем фоне (с эффектом глубины)
+            // 1. Звезды
             stars.forEach(s => {
                 ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
                 ctx.beginPath();
@@ -323,17 +549,29 @@
                 ctx.fill();
             });
 
-            // 2. Орбиты планет (неоновые кольца)
+            // 2. Орбиты
             planets.forEach(p => {
-                ctx.strokeStyle = 'rgba(0, 242, 254, 0.08)';
+                ctx.strokeStyle = 'rgba(0, 242, 254, 0.06)';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
                 ctx.stroke();
             });
 
-            // 3. СОЛНЦЕ (Яркое 2D свечение)
-            const sunGlow = ctx.createRadialGradient(0, 0, 10, 0, 0, 90);
+            // 3. Солнечная волна
+            if (flareWave) {
+                ctx.strokeStyle = 'rgba(255, 71, 87, 0.5)';
+                ctx.lineWidth = 8;
+                ctx.shadowColor = '#ff4757';
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.arc(0, 0, flareWave.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // 4. Солнце
+            const sunGlow = ctx.createRadialGradient(0, 0, 10, 0, 0, 100);
             sunGlow.addColorStop(0, '#ffffff');
             sunGlow.addColorStop(0.2, '#ffaa00');
             sunGlow.addColorStop(0.6, 'rgba(255, 69, 0, 0.4)');
@@ -341,75 +579,109 @@
 
             ctx.fillStyle = sunGlow;
             ctx.beginPath();
-            ctx.arc(0, 0, 90, 0, Math.PI * 2);
+            ctx.arc(0, 0, 100, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.fillStyle = '#ffcc00';
             ctx.beginPath();
-            ctx.arc(0, 0, 35, 0, Math.PI * 2);
+            ctx.arc(0, 0, 40, 0, Math.PI * 2);
             ctx.fill();
 
-            // 4. ПЛАНЕТЫ
+            // 5. Планеты
             planets.forEach(p => {
                 const px = Math.cos(p.angle) * p.radius;
                 const py = Math.sin(p.angle) * p.radius;
 
-                // Кольца Сатурна
                 if (p.hasRings) {
-                    ctx.strokeStyle = 'rgba(230, 194, 128, 0.5)';
-                    ctx.lineWidth = 6;
+                    ctx.strokeStyle = 'rgba(230, 194, 128, 0.4)';
+                    ctx.lineWidth = 8;
                     ctx.beginPath();
                     ctx.arc(px, py, p.size * 1.8, 0, Math.PI * 2);
                     ctx.stroke();
                 }
 
-                // Тело планеты
                 ctx.fillStyle = p.color;
                 ctx.shadowColor = p.color;
                 ctx.shadowBlur = 10;
                 ctx.beginPath();
                 ctx.arc(px, py, p.size, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.shadowBlur = 0; // Сброс тени
+                ctx.shadowBlur = 0;
 
-                // Луна вокруг Земли
-                if (p.hasMoon) {
-                    const mx = px + Math.cos(p.angle * 4) * 26;
-                    const my = py + Math.sin(p.angle * 4) * 26;
-                    ctx.fillStyle = '#cccccc';
-                    ctx.beginPath();
-                    ctx.arc(mx, my, 3, 0, Math.PI * 2);
-                    ctx.fill();
+                // Космические станции
+                if (p.station) {
+                    const stX = px + Math.cos(p.angle * 2) * (p.size + 18);
+                    const stY = py + Math.sin(p.angle * 2) * (p.size + 18);
+                    ctx.fillStyle = '#00f2fe';
+                    ctx.fillRect(stX - 3, stY - 3, 6, 6);
                 }
             });
 
-            // 5. КОРАБЛЬ ИГРОКА (Mexocoder Ship)
-            ctx.save();
-            ctx.translate(ship.x, ship.y);
-            ctx.rotate(ship.angle);
-
-            // Огонь из двигателя
-            if (Math.abs(ship.vx) > 0.2 || Math.abs(ship.vy) > 0.2) {
-                ctx.fillStyle = '#ff4d4d';
-                ctx.shadowColor = '#ff4d4d';
-                ctx.shadowBlur = 12;
+            // 6. Астероиды
+            ctx.fillStyle = '#888888';
+            asteroids.forEach(ast => {
                 ctx.beginPath();
-                ctx.moveTo(-12, -5);
-                ctx.lineTo(-22 - Math.random() * 8, 0);
-                ctx.lineTo(-12, 5);
+                ctx.arc(ast.x, ast.y, ast.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 7. Кристаллы
+            ctx.fillStyle = '#00f2fe';
+            ctx.shadowColor = '#00f2fe';
+            ctx.shadowBlur = 10;
+            crystals.forEach(c => {
+                ctx.fillRect(c.x - 3, c.y - 3, 6, 6);
+            });
+            ctx.shadowBlur = 0;
+
+            // 8. Лазеры
+            ctx.strokeStyle = '#00f2fe';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00f2fe';
+            ctx.shadowBlur = 12;
+            lasers.forEach(l => {
+                ctx.beginPath();
+                ctx.moveTo(l.x, l.y);
+                ctx.lineTo(l.x - l.vx * 1.5, l.y - l.vy * 1.5);
+                ctx.stroke();
+            });
+            ctx.shadowBlur = 0;
+
+            // 9. Частицы
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 10. Корабль игрока
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.rotate(player.angle);
+
+            // Выхлоп двигателя
+            if (Math.abs(player.vx) > 0.1 || Math.abs(player.vy) > 0.1) {
+                ctx.fillStyle = player.isWarping ? '#00f2fe' : '#ff4757';
+                ctx.shadowColor = player.isWarping ? '#00f2fe' : '#ff4757';
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.moveTo(-12, -6);
+                ctx.lineTo(-24 - Math.random() * 10, 0);
+                ctx.lineTo(-12, 6);
                 ctx.closePath();
                 ctx.fill();
             }
 
-            // Неоновый футуристичный треугольный корпус
+            // Корпус
             ctx.fillStyle = '#00f2fe';
             ctx.shadowColor = '#00f2fe';
             ctx.shadowBlur = 15;
             ctx.beginPath();
-            ctx.moveTo(16, 0);
-            ctx.lineTo(-12, -10);
+            ctx.moveTo(18, 0);
+            ctx.lineTo(-12, -11);
             ctx.lineTo(-6, 0);
-            ctx.lineTo(-12, 10);
+            ctx.lineTo(-12, 11);
             ctx.closePath();
             ctx.fill();
 
