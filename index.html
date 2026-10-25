@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Solar System by Mexocoder</title>
+    <title>2D Solar System by Mexocoder</title>
     <style>
         html, body {
             margin: 0;
@@ -11,7 +11,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #000;
+            background-color: #020208;
             touch-action: none;
             font-family: Arial, sans-serif;
             user-select: none;
@@ -21,6 +21,7 @@
             height: 100%;
             display: block;
         }
+        /* Стартовый экран */
         #ui-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -35,7 +36,7 @@
         }
         h1 {
             margin: 0 0 5px 0;
-            font-size: 26px;
+            font-size: 28px;
             letter-spacing: 3px;
             color: #00f2fe;
             text-shadow: 0 0 15px rgba(0, 242, 254, 0.6);
@@ -44,19 +45,19 @@
             font-size: 14px;
             color: #4facfe;
             letter-spacing: 2px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             text-transform: uppercase;
             font-weight: bold;
         }
         p {
             color: #a0aec0;
-            margin-bottom: 25px;
-            font-size: 13px;
+            margin-bottom: 30px;
+            font-size: 14px;
             text-align: center;
-            line-height: 1.4;
+            line-height: 1.5;
         }
         button.start-btn {
-            padding: 15px 35px;
+            padding: 16px 38px;
             font-size: 16px;
             font-weight: bold;
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
@@ -67,43 +68,44 @@
             box-shadow: 0 0 25px rgba(0, 242, 254, 0.5);
         }
 
-        /* Виртуальный Джойстик */
+        /* Визуальный джойстик */
         #joystick-zone {
             position: absolute;
-            bottom: 30px;
-            left: 30px;
+            bottom: 35px;
+            left: 35px;
             width: 130px;
             height: 130px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.04);
+            border: 2px solid rgba(0, 242, 254, 0.2);
             border-radius: 50%;
             z-index: 20;
             display: none;
             touch-action: none;
+            backdrop-filter: blur(4px);
         }
         #joystick-stick {
             position: absolute;
             top: 40px; left: 40px;
             width: 50px; height: 50px;
             background: rgba(0, 242, 254, 0.6);
-            border: 2px solid rgba(255, 255, 255, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.6);
             border-radius: 50%;
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.8);
             pointer-events: none;
         }
 
-        /* Кнопка скрытия интерфейса */
+        /* Кнопка скрытия UI */
         #hide-ui-btn {
             position: absolute;
             top: 15px;
             right: 15px;
-            width: 36px;
-            height: 36px;
+            width: 38px;
+            height: 38px;
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 50%;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 16px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 18px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -117,10 +119,10 @@
 <body>
 
     <div id="ui-overlay">
-        <h1>СОЛНЕЧНАЯ СИСТЕМА 3D</h1>
+        <h1>2D SPACE EXPLORER</h1>
         <div class="author-tag">by Mexocoder</div>
-        <p>ПК: WASD + Мышь<br>Мобильные: Мультитач (джойстик + свайп одновременно)</p>
-        <button class="start-btn" onclick="launchApp()">ИССЛЕДОВАТЬ КОСМОС</button>
+        <p>ПК: WASD / Стрелки<br>Мобильные: Удобный джойстик</p>
+        <button class="start-btn" onclick="launchGame()">ИССЛЕДОВАТЬ</button>
     </div>
 
     <div id="hide-ui-btn" onclick="toggleUI()">👁</div>
@@ -129,25 +131,65 @@
         <div id="joystick-stick"></div>
     </div>
 
-    <canvas id="webglCanvas"></canvas>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <canvas id="gameCanvas"></canvas>
 
     <script>
-        let scene, camera, renderer;
-        let planets = [];
-        let moveState = { forward: 0, right: 0 };
-        
-        let cameraRotation = { x: 0, y: 0 };
-        let uiVisible = true;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-        // Раздельные ID касаний для полноценного мультитача
+        let uiVisible = true;
+        let isRunning = false;
+
+        // Позиция и физика корабля
+        const ship = {
+            x: 0,
+            y: -350, // Старт возле Земли
+            vx: 0,
+            vy: 0,
+            angle: 0,
+            speed: 6,
+            radius: 12
+        };
+
+        // Ввод (WASD / Джойстик)
+        const keys = {};
+        let inputDir = { x: 0, y: 0 };
+
+        // Джойстик
         let joystickPointerId = null;
-        let cameraPointerId = null;
-        let previousPointerPos = { x: 0, y: 0 };
         let joystickCenter = { x: 0, y: 0 };
 
-        function launchApp() {
+        // Звездный фон
+        const stars = [];
+        for (let i = 0; i < 400; i++) {
+            stars.push({
+                x: (Math.random() - 0.5) * 4000,
+                y: (Math.random() - 0.5) * 4000,
+                size: Math.random() * 2 + 0.5,
+                alpha: Math.random() * 0.8 + 0.2
+            });
+        }
+
+        // Солнечная система
+        const planets = [
+            { name: 'Меркурий', radius: 120, size: 7, color: '#a0a0a0', speed: 0.02, angle: Math.random() * Math.PI * 2 },
+            { name: 'Венера', radius: 200, size: 12, color: '#e3bb76', speed: 0.014, angle: Math.random() * Math.PI * 2 },
+            { name: 'Земля', radius: 320, size: 14, color: '#00d2ff', speed: 0.01, angle: Math.random() * Math.PI * 2, hasMoon: true },
+            { name: 'Марс', radius: 460, size: 10, color: '#ff4d4d', speed: 0.007, angle: Math.random() * Math.PI * 2 },
+            { name: 'Юпитер', radius: 680, size: 30, color: '#ffb366', speed: 0.004, angle: Math.random() * Math.PI * 2 },
+            { name: 'Сатурн', radius: 920, size: 24, color: '#e6c280', speed: 0.0025, angle: Math.random() * Math.PI * 2, hasRings: true }
+        ];
+
+        function isTouchDevice() {
+            return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function launchGame() {
             const docElement = document.documentElement;
             if (docElement.requestFullscreen) docElement.requestFullscreen();
             if (screen.orientation && screen.orientation.lock) {
@@ -156,200 +198,63 @@
 
             const overlay = document.getElementById('ui-overlay');
             overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 500);
+            setTimeout(() => overlay.style.display = 'none', 600);
 
-            init3D();
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            setupControls();
+
+            isRunning = true;
+            requestAnimationFrame(gameLoop);
         }
 
         function toggleUI() {
             uiVisible = !uiVisible;
-            const joystick = document.getElementById('joystick-zone');
             if (isTouchDevice()) {
-                joystick.style.display = uiVisible ? 'block' : 'none';
+                document.getElementById('joystick-zone').style.display = uiVisible ? 'block' : 'none';
             }
-            document.getElementById('hide-ui-btn').style.opacity = uiVisible ? '0.3' : '0.05';
-        }
-
-        function isTouchDevice() {
-            return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        }
-
-        function createStarTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 32; canvas.height = 32;
-            const ctx = canvas.getContext('2d');
-            const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-            grad.addColorStop(0, 'rgba(255,255,255,1)');
-            grad.addColorStop(0.3, 'rgba(180,220,255,0.8)');
-            grad.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 32, 32);
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        function init3D() {
-            scene = new THREE.Scene();
-
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-            camera.position.set(0, 35, 130);
-
-            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webglCanvas'), antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-            const sunLight = new THREE.PointLight(0xffffff, 2.5, 4000, 0.5);
-            scene.add(sunLight);
-
-            const ambientLight = new THREE.AmbientLight(0x151525);
-            scene.add(ambientLight);
-
-            // Солнце + корона
-            const sunGeo = new THREE.SphereGeometry(12, 32, 32);
-            const sunMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-            const sunMesh = new THREE.Mesh(sunGeo, sunMat);
-            scene.add(sunMesh);
-
-            const coronaGeo = new THREE.SphereGeometry(15, 32, 32);
-            const coronaMat = new THREE.MeshBasicMaterial({
-                color: 0xff4500,
-                transparent: true,
-                opacity: 0.35,
-                blending: THREE.AdditiveBlending
-            });
-            sunMesh.add(new THREE.Mesh(coronaGeo, coronaMat));
-
-            // Планеты
-            const planetData = [
-                { name: 'Меркурий', size: 1.2, dist: 24, speed: 0.03, color: 0x888888 },
-                { name: 'Венера', size: 2.2, dist: 36, speed: 0.02, color: 0xe3bb76 },
-                { name: 'Земля', size: 2.6, dist: 50, speed: 0.015, color: 0x2266ff },
-                { name: 'Марс', size: 1.8, dist: 66, speed: 0.01, color: 0xcc4422 },
-                { name: 'Юпитер', size: 6.0, dist: 95, speed: 0.006, color: 0xd4a373 },
-                { name: 'Сатурн', size: 4.8, dist: 130, speed: 0.004, color: 0xf4e285, hasRings: true }
-            ];
-
-            planetData.forEach(data => {
-                const geo = new THREE.SphereGeometry(data.size, 32, 32);
-                const mat = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.7, metalness: 0.2 });
-                const mesh = new THREE.Mesh(geo, mat);
-
-                if (data.hasRings) {
-                    const ringGeo = new THREE.RingGeometry(data.size * 1.4, data.size * 2.3, 32);
-                    const ringMat = new THREE.MeshBasicMaterial({ color: 0xc2a878, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
-                    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-                    ringMesh.rotation.x = Math.PI / 2;
-                    mesh.add(ringMesh);
-                }
-
-                scene.add(mesh);
-                planets.push({ mesh: mesh, dist: data.dist, speed: data.speed, angle: Math.random() * Math.PI * 2 });
-            });
-
-            createStarField();
-            setupControls();
-
-            window.addEventListener('resize', onWindowResize);
-            animate();
-        }
-
-        function createStarField() {
-            const count = 3500;
-            const geo = new THREE.BufferGeometry();
-            const pos = new Float32Array(count * 3);
-
-            for (let i = 0; i < count * 3; i += 3) {
-                pos[i]     = (Math.random() - 0.5) * 3500;
-                pos[i + 1] = (Math.random() - 0.5) * 3500;
-                pos[i + 2] = (Math.random() - 0.5) * 3500;
-            }
-
-            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-
-            const mat = new THREE.PointsMaterial({
-                size: 7,
-                map: createStarTexture(),
-                transparent: true,
-                opacity: 0.85,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
-            });
-
-            scene.add(new THREE.Points(geo, mat));
+            document.getElementById('hide-ui-btn').style.opacity = uiVisible ? '0.4' : '0.05';
         }
 
         function setupControls() {
             // Клавиатура (ПК)
-            window.addEventListener('keydown', (e) => {
-                if (e.code === 'KeyW' || e.code === 'ArrowUp') moveState.forward = 1;
-                if (e.code === 'KeyS' || e.code === 'ArrowDown') moveState.forward = -1;
-                if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveState.right = -1;
-                if (e.code === 'KeyD' || e.code === 'ArrowRight') moveState.right = 1;
-            });
+            window.addEventListener('keydown', e => keys[e.code] = true);
+            window.addEventListener('keyup', e => keys[e.code] = false);
 
-            window.addEventListener('keyup', (e) => {
-                if (['KeyW', 'KeyS', 'ArrowUp', 'ArrowDown'].includes(e.code)) moveState.forward = 0;
-                if (['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight'].includes(e.code)) moveState.right = 0;
-            });
-
-            // МУЛЬТИТАЧ ОБРАБОТКА ЧЕРЕЗ POINTER EVENTS
-            window.addEventListener('pointerdown', (e) => {
-                // Если нажали на джойстик
-                if (e.target.closest('#joystick-zone')) {
-                    if (joystickPointerId === null) {
-                        joystickPointerId = e.pointerId;
-                        const zone = document.getElementById('joystick-zone');
-                        const rect = zone.getBoundingClientRect();
-                        joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-                        updateJoystick(e.clientX, e.clientY);
-                    }
-                } else {
-                    // Иначе это палец для вращения камеры (если свободен)
-                    if (cameraPointerId === null) {
-                        cameraPointerId = e.pointerId;
-                        previousPointerPos = { x: e.clientX, y: e.clientY };
-                    }
-                }
-            });
-
-            window.addEventListener('pointermove', (e) => {
-                // Двигаем джойстик тем пальцем, который его зажал
-                if (e.pointerId === joystickPointerId) {
-                    updateJoystick(e.clientX, e.clientY);
-                }
-                // Крутим камеру тем пальцем, который отвечает за обзор
-                else if (e.pointerId === cameraPointerId) {
-                    const deltaX = e.clientX - previousPointerPos.x;
-                    const deltaY = e.clientY - previousPointerPos.y;
-
-                    cameraRotation.y -= deltaX * 0.004;
-                    cameraRotation.x -= deltaY * 0.004;
-                    cameraRotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, cameraRotation.x));
-
-                    previousPointerPos = { x: e.clientX, y: e.clientY };
-                }
-            });
-
-            const handlePointerUp = (e) => {
-                if (e.pointerId === joystickPointerId) {
-                    joystickPointerId = null;
-                    document.getElementById('joystick-stick').style.transform = 'translate(0px, 0px)';
-                    moveState.forward = 0;
-                    moveState.right = 0;
-                }
-                if (e.pointerId === cameraPointerId) {
-                    cameraPointerId = null;
-                }
-            };
-
-            window.addEventListener('pointerup', handlePointerUp);
-            window.addEventListener('pointercancel', handlePointerUp);
-
+            // Джойстик (Мобильные)
             if (isTouchDevice()) {
-                document.getElementById('joystick-zone').style.display = 'block';
+                const zone = document.getElementById('joystick-zone');
+                const stick = document.getElementById('joystick-stick');
+                zone.style.display = 'block';
+
+                zone.addEventListener('pointerdown', e => {
+                    joystickPointerId = e.pointerId;
+                    zone.setPointerCapture(joystickPointerId);
+                    const rect = zone.getBoundingClientRect();
+                    joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                    updateJoystick(e.clientX, e.clientY, stick);
+                });
+
+                zone.addEventListener('pointermove', e => {
+                    if (e.pointerId === joystickPointerId) {
+                        updateJoystick(e.clientX, e.clientY, stick);
+                    }
+                });
+
+                const endJoystick = e => {
+                    if (e.pointerId === joystickPointerId) {
+                        joystickPointerId = null;
+                        stick.style.transform = 'translate(0px, 0px)';
+                        inputDir = { x: 0, y: 0 };
+                    }
+                };
+
+                zone.addEventListener('pointerup', endJoystick);
+                zone.addEventListener('pointercancel', endJoystick);
             }
         }
 
-        function updateJoystick(clientX, clientY) {
+        function updateJoystick(clientX, clientY, stickElement) {
             const dx = clientX - joystickCenter.x;
             const dy = clientY - joystickCenter.y;
             const dist = Math.min(Math.sqrt(dx * dx + dy * dy), 42);
@@ -358,37 +263,166 @@
             const stickX = Math.cos(angle) * dist;
             const stickY = Math.sin(angle) * dist;
 
-            document.getElementById('joystick-stick').style.transform = `translate(${stickX}px, ${stickY}px)`;
+            stickElement.style.transform = `translate(${stickX}px, ${stickY}px)`;
 
-            moveState.right = stickX / 42;
-            moveState.forward = -stickY / 42;
+            inputDir.x = stickX / 42;
+            inputDir.y = stickY / 42;
         }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        function updateLogic() {
+            // Ввод с ПК (WASD)
+            if (!isTouchDevice() || (inputDir.x === 0 && inputDir.y === 0)) {
+                inputDir.x = 0;
+                inputDir.y = 0;
+                if (keys['KeyA'] || keys['ArrowLeft']) inputDir.x -= 1;
+                if (keys['KeyD'] || keys['ArrowRight']) inputDir.x += 1;
+                if (keys['KeyW'] || keys['ArrowUp']) inputDir.y -= 1;
+                if (keys['KeyS'] || keys['ArrowDown']) inputDir.y += 1;
 
-        function animate() {
-            requestAnimationFrame(animate);
+                // Нормализация вектора по диагонали
+                const len = Math.sqrt(inputDir.x * inputDir.x + inputDir.y * inputDir.y);
+                if (len > 0) {
+                    inputDir.x /= len;
+                    inputDir.y /= len;
+                }
+            }
 
+            // Плавный занос и движение корабля
+            ship.vx += inputDir.x * ship.speed * 0.15;
+            ship.vy += inputDir.y * ship.speed * 0.15;
+            ship.vx *= 0.92;
+            ship.vy *= 0.92;
+
+            ship.x += ship.vx;
+            ship.y += ship.vy;
+
+            // Поворот носа корабля по ходу движения
+            if (Math.abs(ship.vx) > 0.1 || Math.abs(ship.vy) > 0.1) {
+                ship.angle = Math.atan2(ship.vy, ship.vx);
+            }
+
+            // Движение планет по орбитам
             planets.forEach(p => {
-                p.angle += p.speed * 0.4;
-                p.mesh.position.x = Math.cos(p.angle) * p.dist;
-                p.mesh.position.z = Math.sin(p.angle) * p.dist;
-                p.mesh.rotation.y += 0.012;
+                p.angle += p.speed * 0.5;
+            });
+        }
+
+        function render() {
+            ctx.fillStyle = '#020208';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            // Камера следит за кораблем
+            ctx.translate(canvas.width / 2 - ship.x, canvas.height / 2 - ship.y);
+
+            // 1. Звезды на заднем фоне (с эффектом глубины)
+            stars.forEach(s => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
             });
 
-            camera.rotation.order = 'YXZ';
-            camera.rotation.y = cameraRotation.y;
-            camera.rotation.x = cameraRotation.x;
+            // 2. Орбиты планет (неоновые кольца)
+            planets.forEach(p => {
+                ctx.strokeStyle = 'rgba(0, 242, 254, 0.08)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            });
 
-            const moveSpeed = 1.4;
-            if (moveState.forward !== 0) camera.translateZ(-moveState.forward * moveSpeed);
-            if (moveState.right !== 0) camera.translateX(moveState.right * moveSpeed);
+            // 3. СОЛНЦЕ (Яркое 2D свечение)
+            const sunGlow = ctx.createRadialGradient(0, 0, 10, 0, 0, 90);
+            sunGlow.addColorStop(0, '#ffffff');
+            sunGlow.addColorStop(0.2, '#ffaa00');
+            sunGlow.addColorStop(0.6, 'rgba(255, 69, 0, 0.4)');
+            sunGlow.addColorStop(1, 'rgba(255, 69, 0, 0)');
 
-            renderer.render(scene, camera);
+            ctx.fillStyle = sunGlow;
+            ctx.beginPath();
+            ctx.arc(0, 0, 90, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffcc00';
+            ctx.beginPath();
+            ctx.arc(0, 0, 35, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 4. ПЛАНЕТЫ
+            planets.forEach(p => {
+                const px = Math.cos(p.angle) * p.radius;
+                const py = Math.sin(p.angle) * p.radius;
+
+                // Кольца Сатурна
+                if (p.hasRings) {
+                    ctx.strokeStyle = 'rgba(230, 194, 128, 0.5)';
+                    ctx.lineWidth = 6;
+                    ctx.beginPath();
+                    ctx.arc(px, py, p.size * 1.8, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // Тело планеты
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(px, py, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0; // Сброс тени
+
+                // Луна вокруг Земли
+                if (p.hasMoon) {
+                    const mx = px + Math.cos(p.angle * 4) * 26;
+                    const my = py + Math.sin(p.angle * 4) * 26;
+                    ctx.fillStyle = '#cccccc';
+                    ctx.beginPath();
+                    ctx.arc(mx, my, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // 5. КОРАБЛЬ ИГРОКА (Mexocoder Ship)
+            ctx.save();
+            ctx.translate(ship.x, ship.y);
+            ctx.rotate(ship.angle);
+
+            // Огонь из двигателя
+            if (Math.abs(ship.vx) > 0.2 || Math.abs(ship.vy) > 0.2) {
+                ctx.fillStyle = '#ff4d4d';
+                ctx.shadowColor = '#ff4d4d';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.moveTo(-12, -5);
+                ctx.lineTo(-22 - Math.random() * 8, 0);
+                ctx.lineTo(-12, 5);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Неоновый футуристичный треугольный корпус
+            ctx.fillStyle = '#00f2fe';
+            ctx.shadowColor = '#00f2fe';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.moveTo(16, 0);
+            ctx.lineTo(-12, -10);
+            ctx.lineTo(-6, 0);
+            ctx.lineTo(-12, 10);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            if (!isRunning) return;
+            updateLogic();
+            render();
+            requestAnimationFrame(gameLoop);
         }
     </script>
 </body>
