@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Твое Имя — Anime Cinematic by Mexocoder</title>
+    <title>Kimi no Na wa — Cinematic Experience by Mexocoder</title>
     <style>
         html, body {
             margin: 0;
@@ -11,7 +11,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #020208;
+            background-color: #020108;
             font-family: 'Segoe UI', Tahoma, sans-serif;
             user-select: none;
         }
@@ -20,30 +20,30 @@
             height: 100%;
             display: block;
         }
-        /* Аниме-стартовый экран */
+        /* Стартовый экран в стиле Синкая */
         #ui-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 30%, rgba(30,20,60,0.95) 0%, rgba(5,2,15,0.99) 100%);
+            background: radial-gradient(circle at 50% 35%, rgba(40,20,70,0.95) 0%, rgba(3,1,10,0.99) 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 100;
             color: #fff;
-            transition: opacity 1s ease;
+            transition: opacity 1.2s ease;
         }
         h1 {
-            margin: 0 0 10px 0;
-            font-size: 36px;
-            letter-spacing: 6px;
-            color: #ffb7c5; /* Нежно-розовый аниме-оттенок */
-            text-shadow: 0 0 25px rgba(255, 183, 197, 0.8);
+            margin: 0 0 8px 0;
+            font-size: 40px;
+            letter-spacing: 8px;
+            color: #ffb7c5;
+            text-shadow: 0 0 30px rgba(255, 183, 197, 0.9);
             font-weight: 300;
         }
         .subtitle {
-            font-size: 14px;
-            letter-spacing: 3px;
+            font-size: 13px;
+            letter-spacing: 4px;
             color: #8be9fd;
             margin-bottom: 25px;
             text-transform: uppercase;
@@ -55,50 +55,51 @@
             margin-bottom: 40px;
             text-transform: uppercase;
             font-weight: bold;
-            text-shadow: 0 0 12px rgba(255, 121, 198, 0.6);
+            text-shadow: 0 0 15px rgba(255, 121, 198, 0.7);
         }
         button.start-btn {
-            padding: 16px 45px;
+            padding: 16px 48px;
             font-size: 16px;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
             font-weight: 600;
             background: linear-gradient(135deg, #ff79c6 0%, #bd93f9 100%);
             color: #fff;
             border: none;
             border-radius: 30px;
             cursor: pointer;
-            box-shadow: 0 0 35px rgba(189, 147, 249, 0.6);
+            box-shadow: 0 0 40px rgba(189, 147, 249, 0.7);
             transition: transform 0.2s;
         }
         button.start-btn:active {
             transform: scale(0.95);
         }
 
-        /* Кинематографичные субтитры внизу */
+        /* Кинематографичные субтитры */
         #subtitles {
             position: absolute;
-            bottom: 40px;
+            bottom: 45px;
             left: 50%;
             transform: translateX(-50%);
             color: #f8f8f2;
-            font-size: 18px;
+            font-size: 19px;
             letter-spacing: 2px;
             text-align: center;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.95);
             z-index: 20;
             opacity: 0;
             transition: opacity 0.8s ease;
             pointer-events: none;
+            width: 85%;
         }
     </style>
 </head>
 <body>
 
     <div id="ui-overlay">
-        <div class="subtitle">MINI-ANIME CINEMATIC EXPERIENCE</div>
+        <div class="subtitle">ANIME CINEMATIC SHORTS</div>
         <h1>ТВОЕ ИМЯ</h1>
         <div class="author-tag">by Mexocoder</div>
-        <button class="start-btn" onclick="launchCinematic()">СМОТРЕТЬ ФИЛЬМ</button>
+        <button class="start-btn" onclick="launchExperience()">СМОТРЕТЬ С МУЗЫКОЙ</button>
     </div>
 
     <div id="subtitles">...</div>
@@ -107,21 +108,49 @@
 
     <script>
         let scene, camera, renderer;
-        let clouds = [];
-        let starsMesh;
+        let clouds = [], starsMesh, comet;
         let isPlaying = false;
         let cinematicTime = 0;
 
+        // Аудио движок (Web Audio API) для генерации музыки и звуков без файлов
+        let audioCtx = null;
+        let musicInterval = null;
+
         const subs = [
-            { time: 2, text: "«Тебе не кажется, что в этом небе есть что-то завораживающее?..»" },
-            { time: 7, text: "Мы взмываем сквозь облака туда, где звезды касаются земли." },
-            { time: 13, text: "«Если мы забудем имена друг друга... как мы найдемся?»" },
-            { time: 19, text: "Падение сквозь бесконечный свет..." },
-            { time: 25, text: "Directed & Coded by Mexocoder" }
+            { time: 2, text: "«В то утро... мне казалось, что я всё еще ищу кого-то.»" },
+            { time: 8, text: "Мы взмываем в сияющее ночное небо, навстречу падающим звездам." },
+            { time: 15, text: "«Если мы никогда не встретимся... я всё равно узнаю тебя.»" },
+            { time: 22, text: "Стремительное падение сквозь облака и космический свет..." },
+            { time: 30, text: "Directed & Coded by Mexocoder" }
         ];
 
-        function launchCinematic() {
-            // Автоматический полный экран
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Генератор красивой эмбиентной музыки в реальном времени
+            const notes = [220, 246.94, 277.18, 329.63, 392.00, 440, 493.88, 554.37]; // Лад минор/мажор
+            musicInterval = setInterval(() => {
+                if (!isPlaying || !audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                const freq = notes[Math.floor(Math.random() * notes.length)];
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 3.5);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 3.5);
+            }, 800);
+        }
+
+        function launchExperience() {
+            // Полноэкранный режим
             const docEl = document.documentElement;
             if (docEl.requestFullscreen) docEl.requestFullscreen();
             else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
@@ -134,6 +163,7 @@
             overlay.style.opacity = '0';
             setTimeout(() => overlay.style.display = 'none', 1000);
 
+            initAudio();
             init3D();
             isPlaying = true;
             cinematicTime = 0;
@@ -142,50 +172,57 @@
 
         function init3D() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x050210);
-            scene.fog = new THREE.FogExp2(0x100826, 0.015);
+            scene.background = new THREE.Color(0x03010a);
+            scene.fog = new THREE.FogExp2(0x0a0520, 0.012);
 
             camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
-            camera.position.set(0, 0, 300);
+            camera.position.set(0, 0, 400);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            // Освещение
-            const ambient = new THREE.AmbientLight(0xffb7c5, 0.7);
+            // Освещение в стиле аниме (розово-голубое свечение)
+            const ambient = new THREE.AmbientLight(0xffb7c5, 0.8);
             scene.add(ambient);
 
-            const dirLight = new THREE.DirectionalLight(0x8be9fd, 1.2);
-            dirLight.position.set(100, 200, 100);
+            const dirLight = new THREE.DirectionalLight(0x8be9fd, 1.5);
+            dirLight.position.set(150, 300, 150);
             scene.add(dirLight);
 
-            // Звездное небо
+            // Звездное поле
             const starGeo = new THREE.BufferGeometry();
-            const starPos = new Float32Array(4000 * 3);
-            for (let i = 0; i < 4000 * 3; i += 3) {
-                starPos[i] = (Math.random() - 0.5) * 2000;
-                starPos[i+1] = (Math.random() - 0.5) * 2000;
-                starPos[i+2] = (Math.random() - 0.5) * 2000;
+            const starPos = new Float32Array(5000 * 3);
+            for (let i = 0; i < 5000 * 3; i += 3) {
+                starPos[i] = (Math.random() - 0.5) * 2500;
+                starPos[i+1] = (Math.random() - 0.5) * 2500;
+                starPos[i+2] = (Math.random() - 0.5) * 2500;
             }
             starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-            const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2.5, transparent: true, opacity: 0.8 });
+            const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, transparent: true, opacity: 0.85 });
             starsMesh = new THREE.Points(starGeo, starMat);
             scene.add(starsMesh);
 
-            // Создание пушистых облаков (в стиле аниме)
-            const cloudGeo = new THREE.SphereGeometry(35, 16, 16);
-            const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffeef5, transparent: true, opacity: 0.35 });
+            // Комета (символ фильма)
+            const cometGeo = new THREE.SphereGeometry(6, 32, 32);
+            const cometMat = new THREE.MeshBasicMaterial({ color: 0xff79c6 });
+            comet = new THREE.Mesh(cometGeo, cometMat);
+            comet.position.set(-300, 200, -800);
+            scene.add(comet);
 
-            for (let i = 0; i < 80; i++) {
+            // Облака
+            const cloudGeo = new THREE.SphereGeometry(40, 16, 16);
+            const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffd1dc, transparent: true, opacity: 0.3 });
+
+            for (let i = 0; i < 90; i++) {
                 const mesh = new THREE.Mesh(cloudGeo, cloudMat);
                 mesh.position.set(
-                    (Math.random() - 0.5) * 800,
-                    (Math.random() - 0.5) * 600 - 100,
-                    (Math.random() - 0.5) * 1200
+                    (Math.random() - 0.5) * 900,
+                    (Math.random() - 0.5) * 700 - 150,
+                    (Math.random() - 0.5) * 1400
                 );
-                mesh.scale.set(Math.random() * 3 + 1, Math.random() * 0.8 + 0.5, Math.random() * 3 + 1);
+                mesh.scale.set(Math.random() * 3.5 + 1, Math.random() * 0.9 + 0.4, Math.random() * 3.5 + 1);
                 scene.add(mesh);
                 clouds.push(mesh);
             }
@@ -201,7 +238,7 @@
             const subEl = document.getElementById('subtitles');
             let currentText = "";
             for (let i = 0; i < subs.length; i++) {
-                if (time >= subs[i].time && (i === subs[i].length || time < (subs[i+1]?.time || 999))) {
+                if (time >= subs[i].time && (i === subs.length - 1 || time < subs[i+1].time)) {
                     currentText = subs[i].text;
                 }
             }
@@ -218,41 +255,43 @@
             if (!isPlaying) return;
             requestAnimationFrame(animate);
 
-            cinematicTime += 0.016; // Секунды
+            cinematicTime += 0.016;
 
-            // Режиссура камеры (Сценарий «Твое имя»)
-            if (cinematicTime < 10) {
-                // Фаза 1: Медленный подлет вверх сквозь звезды
-                camera.position.z -= 0.8;
-                camera.position.y += 0.3;
-                camera.rotation.x = -0.15;
-            } else if (cinematicTime < 22) {
-                // Фаза 2: Эпичное падение вниз сквозь облака
-                camera.position.y -= 1.2;
-                camera.position.z += 0.4;
-                camera.rotation.x = 0.35;
-                camera.rotation.z = Math.sin(cinematicTime * 0.5) * 0.1;
+            // Режиссура сцены «Твое имя»
+            if (cinematicTime < 12) {
+                // Взлет к звездам
+                camera.position.z -= 1.0;
+                camera.position.y += 0.35;
+                camera.rotation.x = -0.18;
+            } else if (cinematicTime < 27) {
+                // Стремительное падение сквозь облака
+                camera.position.y -= 1.6;
+                camera.position.z += 0.6;
+                camera.rotation.x = 0.4;
+                camera.rotation.z = Math.sin(cinematicTime * 0.6) * 0.12;
             } else {
-                // Фаза 3: Финальный панорамный облет
-                camera.position.x = Math.sin(cinematicTime * 0.3) * 200;
-                camera.position.z = Math.cos(cinematicTime * 0.3) * 200;
-                camera.position.y = 50;
+                // Финальный панорамный облет
+                camera.position.x = Math.sin(cinematicTime * 0.3) * 220;
+                camera.position.z = Math.cos(cinematicTime * 0.3) * 220;
+                camera.position.y = 40;
                 camera.rotation.x = 0;
                 camera.rotation.y = -cinematicTime * 0.3;
                 camera.rotation.z = 0;
             }
 
-            // Плавное вращение звезд
-            starsMesh.rotation.y += 0.0005;
+            // Движение кометы
+            comet.position.x += 1.2;
+            comet.position.y -= 0.6;
+            comet.position.z += 1.5;
 
-            // Движение облаков
+            starsMesh.rotation.y += 0.0004;
+
             clouds.forEach(c => {
-                c.position.z += 0.5;
-                if (c.position.z > 200) c.position.z = -1000;
+                c.position.z += 0.7;
+                if (c.position.z > 250) c.position.z = -1200;
             });
 
             updateSubtitles(cinematicTime);
-
             renderer.render(scene, camera);
         }
     </script>
