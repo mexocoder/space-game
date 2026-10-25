@@ -21,7 +21,6 @@
             height: 100%;
             display: block;
         }
-        /* Стартовый экран */
         #ui-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -68,7 +67,7 @@
             box-shadow: 0 0 25px rgba(0, 242, 254, 0.5);
         }
 
-        /* Улучшенный виртуальный Джойстик */
+        /* Виртуальный Джойстик */
         #joystick-zone {
             position: absolute;
             bottom: 30px;
@@ -93,7 +92,7 @@
             pointer-events: none;
         }
 
-        /* Едва заметная кнопка скрытия UI для скриншотов */
+        /* Кнопка скрытия интерфейса */
         #hide-ui-btn {
             position: absolute;
             top: 15px;
@@ -120,7 +119,7 @@
     <div id="ui-overlay">
         <h1>СОЛНЕЧНАЯ СИСТЕМА 3D</h1>
         <div class="author-tag">by Mexocoder</div>
-        <p>ПК: WASD / Стрелки + Мышь<br>Мобильные: Плавный джойстик + Свайп</p>
+        <p>ПК: WASD + Мышь<br>Мобильные: Мультитач (джойстик + свайп одновременно)</p>
         <button class="start-btn" onclick="launchApp()">ИССЛЕДОВАТЬ КОСМОС</button>
     </div>
 
@@ -138,13 +137,14 @@
         let scene, camera, renderer;
         let planets = [];
         let moveState = { forward: 0, right: 0 };
-        let isDragging = false;
-        let previousPointerPos = { x: 0, y: 0 };
+        
         let cameraRotation = { x: 0, y: 0 };
         let uiVisible = true;
 
-        // Переменные джойстика
-        let activePointerId = null;
+        // Раздельные ID касаний для полноценного мультитача
+        let joystickPointerId = null;
+        let cameraPointerId = null;
+        let previousPointerPos = { x: 0, y: 0 };
         let joystickCenter = { x: 0, y: 0 };
 
         function launchApp() {
@@ -197,20 +197,18 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            // Источник света от Солнца
             const sunLight = new THREE.PointLight(0xffffff, 2.5, 4000, 0.5);
             scene.add(sunLight);
 
             const ambientLight = new THREE.AmbientLight(0x151525);
             scene.add(ambientLight);
 
-            // СОЛНЦЕ с эффектом сияния (Шаг 3: Корона)
+            // Солнце + корона
             const sunGeo = new THREE.SphereGeometry(12, 32, 32);
             const sunMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
             const sunMesh = new THREE.Mesh(sunGeo, sunMat);
             scene.add(sunMesh);
 
-            // Внешнее свечение Солнца (Corona)
             const coronaGeo = new THREE.SphereGeometry(15, 32, 32);
             const coronaMat = new THREE.MeshBasicMaterial({
                 color: 0xff4500,
@@ -220,7 +218,7 @@
             });
             sunMesh.add(new THREE.Mesh(coronaGeo, coronaMat));
 
-            // ПЛАНЕТЫ
+            // Планеты
             const planetData = [
                 { name: 'Меркурий', size: 1.2, dist: 24, speed: 0.03, color: 0x888888 },
                 { name: 'Венера', size: 2.2, dist: 36, speed: 0.02, color: 0xe3bb76 },
@@ -244,13 +242,7 @@
                 }
 
                 scene.add(mesh);
-
-                planets.push({
-                    mesh: mesh,
-                    dist: data.dist,
-                    speed: data.speed,
-                    angle: Math.random() * Math.PI * 2
-                });
+                planets.push({ mesh: mesh, dist: data.dist, speed: data.speed, angle: Math.random() * Math.PI * 2 });
             });
 
             createStarField();
@@ -282,12 +274,11 @@
                 depthWrite: false
             });
 
-            const starMesh = new THREE.Points(geo, mat);
-            scene.add(starMesh);
+            scene.add(new THREE.Points(geo, mat));
         }
 
         function setupControls() {
-            // Управление клавиатурой (ПК)
+            // Клавиатура (ПК)
             window.addEventListener('keydown', (e) => {
                 if (e.code === 'KeyW' || e.code === 'ArrowUp') moveState.forward = 1;
                 if (e.code === 'KeyS' || e.code === 'ArrowDown') moveState.forward = -1;
@@ -300,60 +291,65 @@
                 if (['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight'].includes(e.code)) moveState.right = 0;
             });
 
-            // Обзор мышкой / свайпом в свободном пространстве
+            // МУЛЬТИТАЧ ОБРАБОТКА ЧЕРЕЗ POINTER EVENTS
             window.addEventListener('pointerdown', (e) => {
-                if (e.target.closest('#joystick-zone')) return;
-                isDragging = true;
-                previousPointerPos = { x: e.clientX, y: e.clientY };
+                // Если нажали на джойстик
+                if (e.target.closest('#joystick-zone')) {
+                    if (joystickPointerId === null) {
+                        joystickPointerId = e.pointerId;
+                        const zone = document.getElementById('joystick-zone');
+                        const rect = zone.getBoundingClientRect();
+                        joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                        updateJoystick(e.clientX, e.clientY);
+                    }
+                } else {
+                    // Иначе это палец для вращения камеры (если свободен)
+                    if (cameraPointerId === null) {
+                        cameraPointerId = e.pointerId;
+                        previousPointerPos = { x: e.clientX, y: e.clientY };
+                    }
+                }
             });
 
             window.addEventListener('pointermove', (e) => {
-                if (!isDragging) return;
-                const deltaX = e.clientX - previousPointerPos.x;
-                const deltaY = e.clientY - previousPointerPos.y;
+                // Двигаем джойстик тем пальцем, который его зажал
+                if (e.pointerId === joystickPointerId) {
+                    updateJoystick(e.clientX, e.clientY);
+                }
+                // Крутим камеру тем пальцем, который отвечает за обзор
+                else if (e.pointerId === cameraPointerId) {
+                    const deltaX = e.clientX - previousPointerPos.x;
+                    const deltaY = e.clientY - previousPointerPos.y;
 
-                cameraRotation.y -= deltaX * 0.004;
-                cameraRotation.x -= deltaY * 0.004;
-                cameraRotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, cameraRotation.x));
+                    cameraRotation.y -= deltaX * 0.004;
+                    cameraRotation.x -= deltaY * 0.004;
+                    cameraRotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, cameraRotation.x));
 
-                previousPointerPos = { x: e.clientX, y: e.clientY };
+                    previousPointerPos = { x: e.clientX, y: e.clientY };
+                }
             });
 
-            window.addEventListener('pointerup', () => { isDragging = false; });
-
-            // Абсолютно плавный и надежный Джойстик на Pointer Events
-            if (isTouchDevice()) {
-                const zone = document.getElementById('joystick-zone');
-                const stick = document.getElementById('joystick-stick');
-                zone.style.display = 'block';
-
-                zone.addEventListener('pointerdown', (e) => {
-                    activePointerId = e.pointerId;
-                    zone.setPointerCapture(activePointerId);
-                    const rect = zone.getBoundingClientRect();
-                    joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-                    updateJoystick(e.clientX, e.clientY, stick);
-                });
-
-                zone.addEventListener('pointermove', (e) => {
-                    if (e.pointerId !== activePointerId) return;
-                    updateJoystick(e.clientX, e.clientY, stick);
-                });
-
-                const endJoystick = (e) => {
-                    if (e.pointerId !== activePointerId) return;
-                    activePointerId = null;
-                    stick.style.transform = 'translate(0px, 0px)';
+            const handlePointerUp = (e) => {
+                if (e.pointerId === joystickPointerId) {
+                    joystickPointerId = null;
+                    document.getElementById('joystick-stick').style.transform = 'translate(0px, 0px)';
                     moveState.forward = 0;
                     moveState.right = 0;
-                };
+                }
+                if (e.pointerId === cameraPointerId) {
+                    cameraPointerId = null;
+                }
+            };
 
-                zone.addEventListener('pointerup', endJoystick);
-                zone.addEventListener('pointercancel', endJoystick);
+            window.addEventListener('pointerup', handlePointerUp);
+            window.addEventListener('pointercancel', handlePointerUp);
+
+            if (isTouchDevice()) {
+                document.getElementById('joystick-zone').style.display = 'block';
             }
         }
 
-        function updateJoystick(clientX, clientY, stickElement) {
+        function updateJoystick(clientX, clientY) {
             const dx = clientX - joystickCenter.x;
             const dy = clientY - joystickCenter.y;
             const dist = Math.min(Math.sqrt(dx * dx + dy * dy), 42);
@@ -362,9 +358,8 @@
             const stickX = Math.cos(angle) * dist;
             const stickY = Math.sin(angle) * dist;
 
-            stickElement.style.transform = `translate(${stickX}px, ${stickY}px)`;
+            document.getElementById('joystick-stick').style.transform = `translate(${stickX}px, ${stickY}px)`;
 
-            // Плавное пропорциональное управление скоростью
             moveState.right = stickX / 42;
             moveState.forward = -stickY / 42;
         }
@@ -378,7 +373,6 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Орбиты планет
             planets.forEach(p => {
                 p.angle += p.speed * 0.4;
                 p.mesh.position.x = Math.cos(p.angle) * p.dist;
@@ -386,12 +380,10 @@
                 p.mesh.rotation.y += 0.012;
             });
 
-            // Поворот камеры
             camera.rotation.order = 'YXZ';
             camera.rotation.y = cameraRotation.y;
             camera.rotation.x = cameraRotation.x;
 
-            // Движение вперед/назад/вбок
             const moveSpeed = 1.4;
             if (moveState.forward !== 0) camera.translateZ(-moveState.forward * moveSpeed);
             if (moveState.right !== 0) camera.translateX(moveState.right * moveSpeed);
