@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Minecraft 3D v1.12.2 by Mexocoder</title>
+    <title>Твое Имя — Anime Cinematic by Mexocoder</title>
     <style>
         html, body {
             margin: 0;
@@ -11,8 +11,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #7EC0EE;
-            touch-action: none;
+            background-color: #020208;
             font-family: 'Segoe UI', Tahoma, sans-serif;
             user-select: none;
         }
@@ -21,551 +20,241 @@
             height: 100%;
             display: block;
         }
-        /* Главное меню 1.12.2 */
+        /* Аниме-стартовый экран */
         #ui-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.75)), radial-gradient(circle, #3d2817 0%, #1a1008 100%);
+            background: radial-gradient(circle at 50% 30%, rgba(30,20,60,0.95) 0%, rgba(5,2,15,0.99) 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 100;
             color: #fff;
-            transition: opacity 0.5s ease;
+            transition: opacity 1s ease;
         }
         h1 {
-            margin: 0;
-            font-size: 38px;
-            letter-spacing: 3px;
-            color: #ffff55;
-            text-shadow: 3px 3px 0px #3f3f00, 4px 4px 0px #000;
+            margin: 0 0 10px 0;
+            font-size: 36px;
+            letter-spacing: 6px;
+            color: #ffb7c5; /* Нежно-розовый аниме-оттенок */
+            text-shadow: 0 0 25px rgba(255, 183, 197, 0.8);
+            font-weight: 300;
         }
-        .version-tag {
-            font-size: 16px;
-            color: #aaa;
-            margin-bottom: 15px;
-            text-shadow: 2px 2px 0px #000;
+        .subtitle {
+            font-size: 14px;
+            letter-spacing: 3px;
+            color: #8be9fd;
+            margin-bottom: 25px;
+            text-transform: uppercase;
         }
         .author-tag {
             font-size: 15px;
-            color: #55ffff;
-            margin-bottom: 30px;
-            text-shadow: 1px 1px 0px #000;
+            color: #ff79c6;
+            letter-spacing: 4px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
             font-weight: bold;
+            text-shadow: 0 0 12px rgba(255, 121, 198, 0.6);
         }
         button.start-btn {
-            padding: 14px 42px;
-            font-size: 18px;
-            font-weight: bold;
-            background: #707070;
+            padding: 16px 45px;
+            font-size: 16px;
+            letter-spacing: 2px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #ff79c6 0%, #bd93f9 100%);
             color: #fff;
-            border: 2px solid #fff;
-            box-shadow: inset -2px -2px 0px #373737, inset 2px 2px 0px #ffffff;
+            border: none;
+            border-radius: 30px;
             cursor: pointer;
+            box-shadow: 0 0 35px rgba(189, 147, 249, 0.6);
+            transition: transform 0.2s;
         }
         button.start-btn:active {
-            background: #4a4a4a;
-            box-shadow: inset 2px 2px 0px #373737;
+            transform: scale(0.95);
         }
 
-        /* Прицел (Крестик) по центру */
-        #crosshair {
+        /* Кинематографичные субтитры внизу */
+        #subtitles {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 16px;
-            height: 16px;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            z-index: 20;
-            display: none;
-        }
-        #crosshair::before, #crosshair::after {
-            content: '';
-            position: absolute;
-            background: rgba(255, 255, 255, 0.8);
-        }
-        #crosshair::before { top: 7px; left: 0; width: 16px; height: 2px; }
-        #crosshair::after { top: 0; left: 7px; width: 2px; height: 16px; }
-
-        /* Хотбар v1.12.2 */
-        #hotbar-container {
-            position: absolute;
-            bottom: 12px;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            display: none;
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid #3c3c3c;
-            padding: 3px;
-            border-radius: 4px;
+            color: #f8f8f2;
+            font-size: 18px;
+            letter-spacing: 2px;
+            text-align: center;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.9);
             z-index: 20;
-        }
-        .hotbar-slot {
-            width: 36px;
-            height: 36px;
-            margin: 0 2px;
-            background: rgba(139, 139, 139, 0.4);
-            border: 2px solid #373737;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            font-size: 10px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .hotbar-slot.active {
-            border: 2px solid #ffffff;
-            background: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 0 8px rgba(255,255,255,0.8);
-        }
-
-        /* Управление для телефонов */
-        #joystick-zone {
-            position: absolute;
-            bottom: 25px;
-            left: 25px;
-            width: 120px;
-            height: 120px;
-            background: rgba(0, 0, 0, 0.25);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 50%;
-            z-index: 25;
-            display: none;
-            touch-action: none;
-        }
-        #joystick-stick {
-            position: absolute;
-            top: 35px; left: 35px;
-            width: 50px; height: 50px;
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.8s ease;
             pointer-events: none;
-        }
-        .mobile-action-btn {
-            position: absolute;
-            width: 58px;
-            height: 58px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            color: #fff;
-            font-weight: bold;
-            font-size: 12px;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 25;
-            touch-action: none;
-        }
-        #btn-jump { bottom: 35px; right: 30px; }
-        #btn-mine { bottom: 105px; right: 30px; background: rgba(255, 71, 87, 0.4); }
-        #btn-place { bottom: 70px; right: 100px; background: rgba(46, 213, 115, 0.4); }
-
-        #hide-ui-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 34px;
-            height: 34px;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 30;
-            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
     <div id="ui-overlay">
-        <h1>MINECRAFT 3D</h1>
-        <div class="version-tag">Java Edition 1.12.2</div>
+        <div class="subtitle">MINI-ANIME CINEMATIC EXPERIENCE</div>
+        <h1>ТВОЕ ИМЯ</h1>
         <div class="author-tag">by Mexocoder</div>
-        <button class="start-btn" onclick="launchGame()">ИГРАТЬ В 3D</button>
+        <button class="start-btn" onclick="launchCinematic()">СМОТРЕТЬ ФИЛЬМ</button>
     </div>
 
-    <div id="crosshair"></div>
-    <div id="hide-ui-btn" onclick="toggleUI()">👁</div>
-
-    <div id="hotbar-container"></div>
-
-    <!-- Сенсоры для мобилки -->
-    <div id="joystick-zone"><div id="joystick-stick"></div></div>
-    <div id="btn-jump" class="mobile-action-btn">JUMP</div>
-    <div id="btn-mine" class="mobile-action-btn">MINE</div>
-    <div id="btn-place" class="mobile-action-btn">BUILD</div>
+    <div id="subtitles">...</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
         let scene, camera, renderer;
-        let blocksMap = new Map();
-        let uiVisible = true;
-        let isRunning = false;
+        let clouds = [];
+        let starsMesh;
+        let isPlaying = false;
+        let cinematicTime = 0;
 
-        // Физика игрока (Первая особа 3D)
-        const player = {
-            pos: new THREE.Vector3(0, 12, 0),
-            velocity: new THREE.Vector3(0, 0, 0),
-            rotation: { yaw: 0, pitch: 0 },
-            isGrounded: false
-        };
-
-        const moveState = { forward: 0, right: 0 };
-        const keys = {};
-
-        // Хотбар 1.12.2
-        const hotbarTypes = [
-            { id: 1, name: 'Трава', color: 0x557a2b },
-            { id: 2, name: 'Земля', color: 0x5c4033 },
-            { id: 3, name: 'Камень', color: 0x737373 },
-            { id: 4, name: 'Дерево', color: 0x3d2817 },
-            { id: 5, name: 'Листва', color: 0x2d4c1e },
-            { id: 6, name: 'Доски', color: 0xa07844 },
-            { id: 7, name: 'Алмаз', color: 0x55ffff }
+        const subs = [
+            { time: 2, text: "«Тебе не кажется, что в этом небе есть что-то завораживающее?..»" },
+            { time: 7, text: "Мы взмываем сквозь облака туда, где звезды касаются земли." },
+            { time: 13, text: "«Если мы забудем имена друг друга... как мы найдемся?»" },
+            { time: 19, text: "Падение сквозь бесконечный свет..." },
+            { time: 25, text: "Directed & Coded by Mexocoder" }
         ];
-        let selectedSlot = 0;
 
-        // Джойстик и мультитач обзора
-        let joystickPointerId = null;
-        let cameraPointerId = null;
-        let joystickCenter = { x: 0, y: 0 };
-        let previousPointerPos = { x: 0, y: 0 };
+        function launchCinematic() {
+            // Автоматический полный экран
+            const docEl = document.documentElement;
+            if (docEl.requestFullscreen) docEl.requestFullscreen();
+            else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
 
-        function isTouchDevice() {
-            return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        }
-
-        function getKey(x, y, z) {
-            return `${x},${y},${z}`;
-        }
-
-        function createCubeMaterials(color) {
-            // Текстурный эффект верхушки травы 1.12.2
-            if (color === 0x557a2b) {
-                const topMat = new THREE.MeshLambertMaterial({ color: 0x557a2b });
-                const sideMat = new THREE.MeshLambertMaterial({ color: 0x5c4033 });
-                return [sideMat, sideMat, topMat, sideMat, sideMat, sideMat];
-            }
-            return new THREE.MeshLambertMaterial({ color: color });
-        }
-
-        function addBlock(x, y, z, typeObj) {
-            const geo = new THREE.BoxGeometry(1, 1, 1);
-            const mats = createCubeMaterials(typeObj.color);
-            const mesh = new THREE.Mesh(geo, mats);
-            mesh.position.set(x, y, z);
-
-            scene.add(mesh);
-            blocksMap.set(getKey(x, y, z), { mesh, type: typeObj });
-        }
-
-        function removeBlock(x, y, z) {
-            const key = getKey(x, y, z);
-            if (blocksMap.has(key)) {
-                const block = blocksMap.get(key);
-                scene.remove(block.mesh);
-                block.mesh.geometry.dispose();
-                blocksMap.delete(key);
-            }
-        }
-
-        function generate3DWorld() {
-            const size = 16;
-            for (let x = -size; x <= size; x++) {
-                for (let z = -size; z <= size; z++) {
-                    const h = Math.floor(Math.sin(x * 0.2) * 2 + Math.cos(z * 0.2) * 2);
-
-                    // Трава
-                    addBlock(x, h, z, hotbarTypes[0]);
-                    // Земля снизу
-                    addBlock(x, h - 1, z, hotbarTypes[1]);
-                    addBlock(x, h - 2, z, hotbarTypes[1]);
-                    // Камень на глубине
-                    addBlock(x, h - 3, z, hotbarTypes[2]);
-
-                    // Генерация дерева 1.12.2
-                    if (x % 7 === 0 && z % 7 === 0 && Math.abs(x) > 3) {
-                        for (let th = 1; th <= 4; th++) addBlock(x, h + th, z, hotbarTypes[3]);
-                        for (let lx = -1; lx <= 1; lx++) {
-                            for (let lz = -1; lz <= 1; lz++) {
-                                for (let ly = 4; ly <= 5; ly++) {
-                                    if (lx !== 0 || lz !== 0 || ly === 5) addBlock(x + lx, h + ly, z + lz, hotbarTypes[4]);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        function renderHotbarUI() {
-            const container = document.getElementById('hotbar-container');
-            container.innerHTML = '';
-            hotbarTypes.forEach((slot, idx) => {
-                const el = document.createElement('div');
-                el.className = `hotbar-slot ${idx === selectedSlot ? 'active' : ''}`;
-                el.style.backgroundColor = '#' + slot.color.toString(16).padStart(6, '0');
-                el.onclick = () => { selectedSlot = idx; renderHotbarUI(); };
-                container.appendChild(el);
-            });
-        }
-
-        function launchGame() {
-            const docElement = document.documentElement;
-            if (docElement.requestFullscreen) docElement.requestFullscreen();
             if (screen.orientation && screen.orientation.lock) {
                 screen.orientation.lock('landscape').catch(() => {});
             }
 
             const overlay = document.getElementById('ui-overlay');
             overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 500);
-
-            document.getElementById('crosshair').style.display = 'block';
-            document.getElementById('hotbar-container').style.display = 'flex';
+            setTimeout(() => overlay.style.display = 'none', 1000);
 
             init3D();
-            generate3DWorld();
-            renderHotbarUI();
-            setupControls();
-
-            isRunning = true;
+            isPlaying = true;
+            cinematicTime = 0;
             animate();
-        }
-
-        function toggleUI() {
-            uiVisible = !uiVisible;
-            document.getElementById('hotbar-container').style.display = uiVisible ? 'flex' : 'none';
-            if (isTouchDevice()) {
-                document.getElementById('joystick-zone').style.display = uiVisible ? 'block' : 'none';
-                document.getElementById('btn-jump').style.display = uiVisible ? 'flex' : 'none';
-                document.getElementById('btn-mine').style.display = uiVisible ? 'flex' : 'none';
-                document.getElementById('btn-place').style.display = uiVisible ? 'flex' : 'none';
-            }
-            document.getElementById('hide-ui-btn').style.opacity = uiVisible ? '0.4' : '0.1';
         }
 
         function init3D() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x7EC0EE);
-            scene.fog = new THREE.FogExp2(0x7EC0EE, 0.03);
+            scene.background = new THREE.Color(0x050210);
+            scene.fog = new THREE.FogExp2(0x100826, 0.015);
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 0, 300);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            // Освещение 1.12.2
-            const ambientLight = new THREE.AmbientLight(0xcccccc, 0.6);
-            scene.add(ambientLight);
+            // Освещение
+            const ambient = new THREE.AmbientLight(0xffb7c5, 0.7);
+            scene.add(ambient);
 
-            const sunLight = new THREE.DirectionalLight(0xffffff, 0.7);
-            sunLight.position.set(20, 40, 20);
-            scene.add(sunLight);
+            const dirLight = new THREE.DirectionalLight(0x8be9fd, 1.2);
+            dirLight.position.set(100, 200, 100);
+            scene.add(dirLight);
 
-            window.addEventListener('resize', onWindowResize);
-        }
-
-        function setupControls() {
-            // ПК клавиатура
-            window.addEventListener('keydown', e => {
-                keys[e.code] = true;
-                if (e.code >= 'Digit1' && e.code <= 'Digit7') {
-                    selectedSlot = parseInt(e.code.replace('Digit', '')) - 1;
-                    renderHotbarUI();
-                }
-            });
-            window.addEventListener('keyup', e => keys[e.code] = false);
-
-            // Захват мыши ПК
-            renderer.domElement.addEventListener('click', () => {
-                if (!isTouchDevice()) renderer.domElement.requestPointerLock();
-            });
-
-            document.addEventListener('mousemove', e => {
-                if (document.pointerLockElement === renderer.domElement) {
-                    player.rotation.yaw -= e.movementX * 0.003;
-                    player.rotation.pitch -= e.movementY * 0.003;
-                    player.rotation.pitch = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, player.rotation.pitch));
-                }
-            });
-
-            window.addEventListener('mousedown', e => {
-                if (document.pointerLockElement === renderer.domElement) {
-                    if (e.button === 0) raycastBlock(true); // ЛКМ = Ломать
-                    if (e.button === 2) raycastBlock(false); // ПКМ = Строить
-                }
-            });
-
-            // Мобильный мультитач (Джойстик слева + Обзор справа)
-            if (isTouchDevice()) {
-                document.getElementById('joystick-zone').style.display = 'block';
-                document.getElementById('btn-jump').style.display = 'flex';
-                document.getElementById('btn-mine').style.display = 'flex';
-                document.getElementById('btn-place').style.display = 'flex';
-
-                window.addEventListener('pointerdown', e => {
-                    if (e.clientX < window.innerWidth / 2) {
-                        if (joystickPointerId === null && e.target.closest('#joystick-zone')) {
-                            joystickPointerId = e.pointerId;
-                            const rect = document.getElementById('joystick-zone').getBoundingClientRect();
-                            joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-                        }
-                    } else {
-                        if (cameraPointerId === null && !e.target.closest('.mobile-action-btn')) {
-                            cameraPointerId = e.pointerId;
-                            previousPointerPos = { x: e.clientX, y: e.clientY };
-                        }
-                    }
-                });
-
-                window.addEventListener('pointermove', e => {
-                    if (e.pointerId === joystickPointerId) {
-                        const dx = e.clientX - joystickCenter.x;
-                        const dy = e.clientY - joystickCenter.y;
-                        const dist = Math.min(Math.sqrt(dx * dx + dy * dy), 40);
-                        const angle = Math.atan2(dy, dx);
-
-                        const stickX = Math.cos(angle) * dist;
-                        const stickY = Math.sin(angle) * dist;
-                        document.getElementById('joystick-stick').style.transform = `translate(${stickX}px, ${stickY}px)`;
-
-                        moveState.right = stickX / 40;
-                        moveState.forward = -stickY / 40;
-                    } else if (e.pointerId === cameraPointerId) {
-                        const deltaX = e.clientX - previousPointerPos.x;
-                        const deltaY = e.clientY - previousPointerPos.y;
-
-                        player.rotation.yaw -= deltaX * 0.005;
-                        player.rotation.pitch -= deltaY * 0.005;
-                        player.rotation.pitch = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, player.rotation.pitch));
-
-                        previousPointerPos = { x: e.clientX, y: e.clientY };
-                    }
-                });
-
-                const endTouch = e => {
-                    if (e.pointerId === joystickPointerId) {
-                        joystickPointerId = null;
-                        document.getElementById('joystick-stick').style.transform = 'translate(0px, 0px)';
-                        moveState.forward = 0; moveState.right = 0;
-                    }
-                    if (e.pointerId === cameraPointerId) cameraPointerId = null;
-                };
-
-                window.addEventListener('pointerup', endTouch);
-                window.addEventListener('pointercancel', endTouch);
-
-                // Кнопки взаимодействия
-                document.getElementById('btn-jump').addEventListener('pointerdown', () => {
-                    if (player.isGrounded) player.velocity.y = 0.22;
-                });
-                document.getElementById('btn-mine').addEventListener('pointerdown', () => raycastBlock(true));
-                document.getElementById('btn-place').addEventListener('pointerdown', () => raycastBlock(false));
+            // Звездное небо
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = new Float32Array(4000 * 3);
+            for (let i = 0; i < 4000 * 3; i += 3) {
+                starPos[i] = (Math.random() - 0.5) * 2000;
+                starPos[i+1] = (Math.random() - 0.5) * 2000;
+                starPos[i+2] = (Math.random() - 0.5) * 2000;
             }
-        }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2.5, transparent: true, opacity: 0.8 });
+            starsMesh = new THREE.Points(starGeo, starMat);
+            scene.add(starsMesh);
 
-        // Raycast по центру прицела (Ломание / Постройка)
-        function raycastBlock(isMining) {
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            // Создание пушистых облаков (в стиле аниме)
+            const cloudGeo = new THREE.SphereGeometry(35, 16, 16);
+            const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffeef5, transparent: true, opacity: 0.35 });
 
-            const meshes = Array.from(blocksMap.values()).map(b => b.mesh);
-            const intersects = raycaster.intersectObjects(meshes);
-
-            if (intersects.length > 0 && intersects[0].distance < 6) {
-                const hit = intersects[0];
-                const pos = hit.object.position;
-
-                if (isMining) {
-                    removeBlock(pos.x, pos.y, pos.z);
-                } else {
-                    const norm = hit.face.normal;
-                    const nx = pos.x + norm.x;
-                    const ny = pos.y + norm.y;
-                    const nz = pos.z + norm.z;
-
-                    addBlock(nx, ny, nz, hotbarTypes[selectedSlot]);
-                }
-            }
-        }
-
-        function updatePhysics() {
-            // Движение относительно взгляда камеры
-            let fwd = 0, rgt = 0;
-            if (keys['KeyW']) fwd = 1;
-            if (keys['KeyS']) fwd = -1;
-            if (keys['KeyA']) rgt = -1;
-            if (keys['KeyD']) rgt = 1;
-
-            if (moveState.forward !== 0) fwd = moveState.forward;
-            if (moveState.right !== 0) rgt = moveState.right;
-
-            const speed = 0.12;
-            const sinY = Math.sin(player.rotation.yaw);
-            const cosY = Math.cos(player.rotation.yaw);
-
-            player.velocity.x = (fwd * -sinY + rgt * cosY) * speed;
-            player.velocity.z = (fwd * -cosY - rgt * sinY) * speed;
-
-            // Прыжок ПК
-            if (keys['Space'] && player.isGrounded) {
-                player.velocity.y = 0.22;
-                player.isGrounded = false;
+            for (let i = 0; i < 80; i++) {
+                const mesh = new THREE.Mesh(cloudGeo, cloudMat);
+                mesh.position.set(
+                    (Math.random() - 0.5) * 800,
+                    (Math.random() - 0.5) * 600 - 100,
+                    (Math.random() - 0.5) * 1200
+                );
+                mesh.scale.set(Math.random() * 3 + 1, Math.random() * 0.8 + 0.5, Math.random() * 3 + 1);
+                scene.add(mesh);
+                clouds.push(mesh);
             }
 
-            // Гравитация
-            player.velocity.y -= 0.012;
-
-            player.pos.x += player.velocity.x;
-            player.pos.y += player.velocity.y;
-            player.pos.z += player.velocity.z;
-
-            // Простая коллизия с землей
-            const checkX = Math.round(player.pos.x);
-            const checkY = Math.floor(player.pos.y - 1.5);
-            const checkZ = Math.round(player.pos.z);
-
-            if (blocksMap.has(getKey(checkX, checkY, checkZ))) {
-                player.pos.y = checkY + 2.5;
-                player.velocity.y = 0;
-                player.isGrounded = true;
-            } else {
-                player.isGrounded = false;
-            }
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
         }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        function updateSubtitles(time) {
+            const subEl = document.getElementById('subtitles');
+            let currentText = "";
+            for (let i = 0; i < subs.length; i++) {
+                if (time >= subs[i].time && (i === subs[i].length || time < (subs[i+1]?.time || 999))) {
+                    currentText = subs[i].text;
+                }
+            }
+
+            if (currentText && subEl.innerText !== currentText) {
+                subEl.innerText = currentText;
+                subEl.style.opacity = '1';
+            } else if (!currentText) {
+                subEl.style.opacity = '0';
+            }
         }
 
         function animate() {
-            if (!isRunning) return;
+            if (!isPlaying) return;
             requestAnimationFrame(animate);
 
-            updatePhysics();
+            cinematicTime += 0.016; // Секунды
 
-            // Поворот камеры 3D
-            camera.rotation.order = 'YXZ';
-            camera.rotation.y = player.rotation.yaw;
-            camera.rotation.x = player.rotation.pitch;
-            camera.position.copy(player.pos);
+            // Режиссура камеры (Сценарий «Твое имя»)
+            if (cinematicTime < 10) {
+                // Фаза 1: Медленный подлет вверх сквозь звезды
+                camera.position.z -= 0.8;
+                camera.position.y += 0.3;
+                camera.rotation.x = -0.15;
+            } else if (cinematicTime < 22) {
+                // Фаза 2: Эпичное падение вниз сквозь облака
+                camera.position.y -= 1.2;
+                camera.position.z += 0.4;
+                camera.rotation.x = 0.35;
+                camera.rotation.z = Math.sin(cinematicTime * 0.5) * 0.1;
+            } else {
+                // Фаза 3: Финальный панорамный облет
+                camera.position.x = Math.sin(cinematicTime * 0.3) * 200;
+                camera.position.z = Math.cos(cinematicTime * 0.3) * 200;
+                camera.position.y = 50;
+                camera.rotation.x = 0;
+                camera.rotation.y = -cinematicTime * 0.3;
+                camera.rotation.z = 0;
+            }
+
+            // Плавное вращение звезд
+            starsMesh.rotation.y += 0.0005;
+
+            // Движение облаков
+            clouds.forEach(c => {
+                c.position.z += 0.5;
+                if (c.position.z > 200) c.position.z = -1000;
+            });
+
+            updateSubtitles(cinematicTime);
 
             renderer.render(scene, camera);
         }
-
-        window.oncontextmenu = e => e.preventDefault();
     </script>
 </body>
 </html>
