@@ -1,299 +1,726 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kimi no Na wa — Cinematic Experience by Mexocoder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle vs Polygons - Interactive Game Design Prototype</title>
+    <!-- Tailwind CSS for UI Layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #020108;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #0b0f19;
+            color: #e2e8f0;
             user-select: none;
+            overflow-x: hidden;
         }
         canvas {
-            width: 100%;
-            height: 100%;
             display: block;
+            touch-action: none;
+            background: radial-gradient(circle at center, #111827 0%, #030712 100%);
         }
-        /* Стартовый экран в стиле Синкая */
-        #ui-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 35%, rgba(40,20,70,0.95) 0%, rgba(3,1,10,0.99) 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            color: #fff;
-            transition: opacity 1.2s ease;
+        /* Custom scrollbar for control panels */
+        ::-webkit-scrollbar {
+            width: 6px;
         }
-        h1 {
-            margin: 0 0 8px 0;
-            font-size: 40px;
-            letter-spacing: 8px;
-            color: #ffb7c5;
-            text-shadow: 0 0 30px rgba(255, 183, 197, 0.9);
-            font-weight: 300;
+        ::-webkit-scrollbar-track {
+            background: #111827;
         }
-        .subtitle {
-            font-size: 13px;
-            letter-spacing: 4px;
-            color: #8be9fd;
-            margin-bottom: 25px;
-            text-transform: uppercase;
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
         }
-        .author-tag {
-            font-size: 15px;
-            color: #ff79c6;
-            letter-spacing: 4px;
-            margin-bottom: 40px;
-            text-transform: uppercase;
-            font-weight: bold;
-            text-shadow: 0 0 15px rgba(255, 121, 198, 0.7);
-        }
-        button.start-btn {
-            padding: 16px 48px;
-            font-size: 16px;
-            letter-spacing: 3px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #ff79c6 0%, #bd93f9 100%);
-            color: #fff;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 0 40px rgba(189, 147, 249, 0.7);
-            transition: transform 0.2s;
-        }
-        button.start-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* Кинематографичные субтитры */
-        #subtitles {
-            position: absolute;
-            bottom: 45px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #f8f8f2;
-            font-size: 19px;
-            letter-spacing: 2px;
-            text-align: center;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.95);
-            z-index: 20;
-            opacity: 0;
-            transition: opacity 0.8s ease;
-            pointer-events: none;
-            width: 85%;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
         }
     </style>
 </head>
-<body>
+<body class="h-screen w-screen flex flex-col md:flex-row overflow-hidden">
 
-    <div id="ui-overlay">
-        <div class="subtitle">ANIME CINEMATIC SHORTS</div>
-        <h1>ТВОЕ ИМЯ</h1>
-        <div class="author-tag">by Mexocoder</div>
-        <button class="start-btn" onclick="launchExperience()">СМОТРЕТЬ С МУЗЫКОЙ</button>
+    <!-- GAME CANVAS CONTAINER -->
+    <div class="relative flex-1 h-2/3 md:h-full bg-black overflow-hidden flex flex-col">
+        <!-- Canvas Element -->
+        <canvas id="gameCanvas" class="w-full h-full flex-1"></canvas>
+
+        <!-- On-Screen HUD Overlay -->
+        <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
+            <!-- Stats -->
+            <div class="bg-gray-900/80 backdrop-blur-md border border-cyan-500/30 p-3 rounded-xl shadow-lg flex gap-4 text-xs md:text-sm">
+                <div>
+                    <span class="text-gray-400 block">PLAYER HP</span>
+                    <div class="w-24 md:w-32 bg-gray-800 h-3 rounded-full overflow-hidden mt-1 border border-gray-700">
+                        <div id="hpBar" class="bg-gradient-to-r from-red-500 to-cyan-400 h-full w-full transition-all duration-200"></div>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-gray-400 block">COMBO</span>
+                    <span id="comboText" class="text-xl font-extrabold text-cyan-400">x0</span>
+                </div>
+                <div>
+                    <span class="text-gray-400 block">DESTROYED</span>
+                    <span id="scoreText" class="text-xl font-extrabold text-amber-400">0</span>
+                </div>
+            </div>
+
+            <!-- Controls Prompt -->
+            <div class="bg-gray-900/80 backdrop-blur-md border border-gray-700/50 p-3 rounded-xl text-xs text-gray-300 hidden sm:block max-w-xs">
+                <span class="font-bold text-cyan-400">How to Play:</span>
+                <ul class="list-disc list-inside mt-1 space-y-0.5 text-gray-400">
+                    <li><b class="text-gray-200">WASD / Arrows:</b> Roll Circle</li>
+                    <li><b class="text-gray-200">Space / Mouse Click:</b> Dash to Target</li>
+                    <li><b class="text-rose-400">Aim for the glowing Core/Heart!</b> Avoid outer sharp edges!</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Boss Bar Overlay (Hidden by default) -->
+        <div id="bossHpContainer" class="absolute bottom-6 left-1/2 -translate-x-1/2 w-3/4 max-w-md hidden pointer-events-none transition-all duration-300">
+            <div class="bg-gray-900/90 border border-purple-500/50 p-2.5 rounded-xl backdrop-blur-md text-center">
+                <div class="flex justify-between text-xs font-bold text-purple-300 mb-1">
+                    <span>POLY-BOSS (10,000 ANGLES)</span>
+                    <span id="bossHpText">100%</span>
+                </div>
+                <div class="w-full bg-gray-800 h-3 rounded-full overflow-hidden border border-purple-900">
+                    <div id="bossHpBar" class="bg-gradient-to-r from-purple-600 to-pink-500 h-full w-full"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="subtitles">...</div>
+    <!-- SIDE PANEL: GAME DESIGN FEEDBACK & CONTROLS -->
+    <div class="w-full md:w-96 h-1/3 md:h-full bg-gray-900 border-t md:border-t-0 md:border-l border-gray-800 flex flex-col p-4 overflow-y-auto">
+        <h2 class="text-lg font-bold text-cyan-400 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Game Design Prototype
+        </h2>
+        <p class="text-xs text-gray-400 mt-1 mb-4">Testing core mechanic: <i>"Circle penetrating heart of sharp polygons"</i>.</p>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <!-- SPAWN CONTROLS -->
+        <div class="mb-5 bg-gray-800/50 p-3 rounded-xl border border-gray-700/50">
+            <label class="text-xs font-semibold text-gray-300 block mb-2">SPAWN ENEMIES</label>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="spawnTriBtn" class="bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-300 py-1.5 px-3 rounded-lg text-xs font-medium transition active:scale-95">
+                    + Triangle (3)
+                </button>
+                <button id="spawnSquareBtn" class="bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/50 text-blue-300 py-1.5 px-3 rounded-lg text-xs font-medium transition active:scale-95">
+                    + Square (4)
+                </button>
+                <button id="spawnPentaBtn" class="bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/50 text-amber-300 py-1.5 px-3 rounded-lg text-xs font-medium transition active:scale-95">
+                    + Pentagon (5)
+                </button>
+                <button id="spawnBossBtn" class="bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/50 text-purple-300 py-1.5 px-3 rounded-lg text-xs font-medium transition active:scale-95">
+                    + Mega Boss
+                </button>
+            </div>
+            <button id="clearBtn" class="w-full mt-2 bg-gray-700/30 hover:bg-gray-700/60 text-gray-400 py-1 rounded-lg text-xs transition">
+                Clear Field
+            </button>
+        </div>
 
+        <!-- TWEAK SLIDERS -->
+        <div class="mb-5 bg-gray-800/50 p-3 rounded-xl border border-gray-700/50 space-y-3">
+            <label class="text-xs font-semibold text-gray-300 block">GAME JUICE & PHYSICS TUNING</label>
+
+            <div>
+                <div class="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Screenshake / Juice</span>
+                    <span id="shakeVal" class="text-cyan-400 font-mono">1.0</span>
+                </div>
+                <input id="shakeSlider" type="range" min="0" max="2.5" step="0.1" value="1.0" class="w-full accent-cyan-500">
+            </div>
+
+            <div>
+                <div class="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Dash Speed / Momentum</span>
+                    <span id="dashVal" class="text-cyan-400 font-mono">18</span>
+                </div>
+                <input id="dashSlider" type="range" min="10" max="30" step="1" value="18" class="w-full accent-cyan-500">
+            </div>
+
+            <div>
+                <div class="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Hit-Stop / Slow-Mo</span>
+                    <span id="slowmoVal" class="text-cyan-400 font-mono">120ms</span>
+                </div>
+                <input id="slowmoSlider" type="range" min="0" max="300" step="20" value="120" class="w-full accent-cyan-500">
+            </div>
+        </div>
+
+        <!-- DESIGN FEEDBACK ANALYSIS -->
+        <div class="flex-1 bg-gray-950/60 p-3 rounded-xl border border-gray-800 text-xs flex flex-col gap-3">
+            <h3 class="font-bold text-gray-200 border-b border-gray-800 pb-1.5 flex items-center justify-between">
+                <span>DESIGN EVALUATION</span>
+                <span class="text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 px-1.5 py-0.5 rounded">v0.1 Prototype</span>
+            </h3>
+
+            <!-- WHAT WORKS WELL -->
+            <div>
+                <span class="font-bold text-emerald-400 flex items-center gap-1 mb-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    What Works Great (Отличные идеи):
+                </span>
+                <ul class="list-disc list-inside text-gray-400 space-y-1 pl-1">
+                    <li><b>High Satisfaction:</b> Puncturing the central heart with slow-mo + particle explosion feels immensely rewarding.</li>
+                    <li><b>Clear Contrast:</b> Smooth rolling circle vs rotating sharp polygons creates immediate readable gameplay.</li>
+                    <li><b>Dynamic Risk/Reward:</b> Aiming for the center heart risks hitting outer sharp edges.</li>
+                </ul>
+            </div>
+
+            <!-- WHAT NEEDS TUNING -->
+            <div>
+                <span class="font-bold text-amber-400 flex items-center gap-1 mb-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    What Needs Tuning (Что стоит доработать):
+                </span>
+                <ul class="list-disc list-inside text-gray-400 space-y-1 pl-1">
+                    <li><b>Angle Vulnerability:</b> Outer sharp edges need clear visual warning indicators right before they rotate/strike.</li>
+                    <li><b>Dash Aiming:</b> Mouse-direction dash feels crisp, but mobile touch-swipe requires auto-aim assist toward nearest heart.</li>
+                    <li><b>Heart Armor:</b> Boss hearts need rotating shield plates so the player must timing-click through gaps.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT GAME ENGINE -->
     <script>
-        let scene, camera, renderer;
-        let clouds = [], starsMesh, comet;
-        let isPlaying = false;
-        let cinematicTime = 0;
+        // Setup Canvas
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-        // Аудио движок (Web Audio API) для генерации музыки и звуков без файлов
-        let audioCtx = null;
-        let musicInterval = null;
-
-        const subs = [
-            { time: 2, text: "«В то утро... мне казалось, что я всё еще ищу кого-то.»" },
-            { time: 8, text: "Мы взмываем в сияющее ночное небо, навстречу падающим звездам." },
-            { time: 15, text: "«Если мы никогда не встретимся... я всё равно узнаю тебя.»" },
-            { time: 22, text: "Стремительное падение сквозь облака и космический свет..." },
-            { time: 30, text: "Directed & Coded by Mexocoder" }
-        ];
-
-        function initAudio() {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-            // Генератор красивой эмбиентной музыки в реальном времени
-            const notes = [220, 246.94, 277.18, 329.63, 392.00, 440, 493.88, 554.37]; // Лад минор/мажор
-            musicInterval = setInterval(() => {
-                if (!isPlaying || !audioCtx) return;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-
-                osc.type = 'sine';
-                const freq = notes[Math.floor(Math.random() * notes.length)];
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-                gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 3.5);
-
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                osc.start();
-                osc.stop(audioCtx.currentTime + 3.5);
-            }, 800);
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
         }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-        function launchExperience() {
-            // Полноэкранный режим
-            const docEl = document.documentElement;
-            if (docEl.requestFullscreen) docEl.requestFullscreen();
-            else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+        // Game Parameters & Tuning Settings
+        const settings = {
+            shakeMultiplier: 1.0,
+            dashSpeed: 18,
+            hitstopDuration: 120 // ms
+        };
 
-            if (screen.orientation && screen.orientation.lock) {
-                screen.orientation.lock('landscape').catch(() => {});
+        // UI Slider Listeners
+        document.getElementById('shakeSlider').addEventListener('input', (e) => {
+            settings.shakeMultiplier = parseFloat(e.target.value);
+            document.getElementById('shakeVal').innerText = settings.shakeMultiplier.toFixed(1);
+        });
+        document.getElementById('dashSlider').addEventListener('input', (e) => {
+            settings.dashSpeed = parseInt(e.target.value);
+            document.getElementById('dashVal').innerText = settings.dashSpeed;
+        });
+        document.getElementById('slowmoSlider').addEventListener('input', (e) => {
+            settings.hitstopDuration = parseInt(e.target.value);
+            document.getElementById('slowmoVal').innerText = settings.hitstopDuration + 'ms';
+        });
+
+        // Game State Variables
+        let screenShake = 0;
+        let slowMoTime = 0;
+        let score = 0;
+        let combo = 0;
+        let comboTimer = 0;
+
+        // Input Tracking
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false, Space: false };
+        let mousePos = { x: canvas.width / 2, y: canvas.height / 2 };
+
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.code)) {
+                keys[e.key] = true;
+                if (e.code === 'Space') {
+                    keys.Space = true;
+                    player.dash();
+                }
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+            if (e.code === 'Space') keys.Space = false;
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mousePos.x = e.clientX - rect.left;
+            mousePos.y = e.clientY - rect.top;
+        });
+        canvas.addEventListener('mousedown', () => {
+            player.dash();
+        });
+
+        // Particle System
+        class Particle {
+            constructor(x, y, color, size, speedX, speedY, life = 1, isSharp = false) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = size;
+                this.vx = speedX;
+                this.vy = speedY;
+                this.alpha = 1;
+                this.life = life;
+                this.decay = 0.015 + Math.random() * 0.02;
+                this.isSharp = isSharp;
+                this.angle = Math.random() * Math.PI * 2;
+                this.rotSpeed = (Math.random() - 0.5) * 0.2;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.96;
+                this.vy *= 0.96;
+                this.alpha -= this.decay;
+                this.angle += this.rotSpeed;
+            }
+            draw(ctx) {
+                if (this.alpha <= 0) return;
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = this.color;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                if (this.isSharp) {
+                    // Draw triangular polygon shard
+                    ctx.beginPath();
+                    ctx.moveTo(0, -this.size * 1.5);
+                    ctx.lineTo(this.size, this.size);
+                    ctx.lineTo(-this.size, this.size);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    // Glowing circular particle
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+        let particles = [];
+
+        // PLAYER: Glowing Smooth Circle
+        class Player {
+            constructor() {
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2;
+                this.radius = 18;
+                this.vx = 0;
+                this.vy = 0;
+                this.accel = 0.8;
+                this.friction = 0.88;
+                this.hp = 100;
+                this.maxHp = 100;
+                this.isDashing = false;
+                this.dashCooldown = 0;
+                this.glowPhase = 0;
             }
 
-            const overlay = document.getElementById('ui-overlay');
-            overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 1000);
+            update() {
+                // Movement input
+                if (keys.a || keys.ArrowLeft) this.vx -= this.accel;
+                if (keys.d || keys.ArrowRight) this.vx += this.accel;
+                if (keys.w || keys.ArrowUp) this.vy -= this.accel;
+                if (keys.s || keys.ArrowDown) this.vy += this.accel;
 
-            initAudio();
-            init3D();
-            isPlaying = true;
-            cinematicTime = 0;
-            animate();
-        }
+                // Physics update
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= this.friction;
+                this.vy *= this.friction;
 
-        function init3D() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x03010a);
-            scene.fog = new THREE.FogExp2(0x0a0520, 0.012);
+                // Canvas boundaries bounce
+                if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -0.5; }
+                if (this.x + this.radius > canvas.width) { this.x = canvas.width - this.radius; this.vx *= -0.5; }
+                if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -0.5; }
+                if (this.y + this.radius > canvas.height) { this.y = canvas.height - this.radius; this.vy *= -0.5; }
 
-            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2000);
-            camera.position.set(0, 0, 400);
+                if (this.dashCooldown > 0) this.dashCooldown--;
+                if (Math.hypot(this.vx, this.vy) < 2) this.isDashing = false;
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            document.body.appendChild(renderer.domElement);
+                this.glowPhase += 0.05;
 
-            // Освещение в стиле аниме (розово-голубое свечение)
-            const ambient = new THREE.AmbientLight(0xffb7c5, 0.8);
-            scene.add(ambient);
-
-            const dirLight = new THREE.DirectionalLight(0x8be9fd, 1.5);
-            dirLight.position.set(150, 300, 150);
-            scene.add(dirLight);
-
-            // Звездное поле
-            const starGeo = new THREE.BufferGeometry();
-            const starPos = new Float32Array(5000 * 3);
-            for (let i = 0; i < 5000 * 3; i += 3) {
-                starPos[i] = (Math.random() - 0.5) * 2500;
-                starPos[i+1] = (Math.random() - 0.5) * 2500;
-                starPos[i+2] = (Math.random() - 0.5) * 2500;
-            }
-            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-            const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, transparent: true, opacity: 0.85 });
-            starsMesh = new THREE.Points(starGeo, starMat);
-            scene.add(starsMesh);
-
-            // Комета (символ фильма)
-            const cometGeo = new THREE.SphereGeometry(6, 32, 32);
-            const cometMat = new THREE.MeshBasicMaterial({ color: 0xff79c6 });
-            comet = new THREE.Mesh(cometGeo, cometMat);
-            comet.position.set(-300, 200, -800);
-            scene.add(comet);
-
-            // Облака
-            const cloudGeo = new THREE.SphereGeometry(40, 16, 16);
-            const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffd1dc, transparent: true, opacity: 0.3 });
-
-            for (let i = 0; i < 90; i++) {
-                const mesh = new THREE.Mesh(cloudGeo, cloudMat);
-                mesh.position.set(
-                    (Math.random() - 0.5) * 900,
-                    (Math.random() - 0.5) * 700 - 150,
-                    (Math.random() - 0.5) * 1400
-                );
-                mesh.scale.set(Math.random() * 3.5 + 1, Math.random() * 0.9 + 0.4, Math.random() * 3.5 + 1);
-                scene.add(mesh);
-                clouds.push(mesh);
-            }
-
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-        }
-
-        function updateSubtitles(time) {
-            const subEl = document.getElementById('subtitles');
-            let currentText = "";
-            for (let i = 0; i < subs.length; i++) {
-                if (time >= subs[i].time && (i === subs.length - 1 || time < subs[i+1].time)) {
-                    currentText = subs[i].text;
+                // Leave trail particles when moving fast
+                if (Math.hypot(this.vx, this.vy) > 4) {
+                    particles.push(new Particle(this.x, this.y, '#06b6d4', Math.random() * 3 + 2, -this.vx * 0.2, -this.vy * 0.2));
                 }
             }
 
-            if (currentText && subEl.innerText !== currentText) {
-                subEl.innerText = currentText;
-                subEl.style.opacity = '1';
-            } else if (!currentText) {
-                subEl.style.opacity = '0';
+            dash() {
+                if (this.dashCooldown > 0) return;
+                // Dash towards mouse position
+                const dx = mousePos.x - this.x;
+                const dy = mousePos.y - this.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0) {
+                    this.vx = (dx / dist) * settings.dashSpeed;
+                    this.vy = (dy / dist) * settings.dashSpeed;
+                    this.isDashing = true;
+                    this.dashCooldown = 20;
+
+                    // Dash burst effects
+                    for (let i = 0; i < 12; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const spd = Math.random() * 4 + 2;
+                        particles.push(new Particle(this.x, this.y, '#22d3ee', 4, Math.cos(angle) * spd, Math.sin(angle) * spd));
+                    }
+                }
+            }
+
+            takeDamage(amount, bounceVx, bounceVy) {
+                this.hp = Math.max(0, this.hp - amount);
+                this.vx = bounceVx;
+                this.vy = bounceVy;
+                screenShake = 12 * settings.shakeMultiplier;
+                document.getElementById('hpBar').style.width = (this.hp / this.maxHp * 100) + '%';
+
+                // Red damage sparks
+                for (let i = 0; i < 10; i++) {
+                    particles.push(new Particle(this.x, this.y, '#ef4444', 3, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8));
+                }
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // Outer aura glow
+                const glowSize = this.radius + 6 + Math.sin(this.glowPhase) * 3;
+                const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, glowSize * 1.5);
+                grad.addColorStop(0, '#22d3ee');
+                grad.addColorStop(0.5, 'rgba(6, 182, 212, 0.4)');
+                grad.addColorStop(1, 'rgba(6, 182, 212, 0)');
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(0, 0, glowSize * 1.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Core Smooth Circle Body
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.isDashing ? '#ffffff' : '#06b6d4';
+                ctx.shadowBlur = this.isDashing ? 20 : 12;
+                ctx.shadowColor = '#22d3ee';
+                ctx.fill();
+
+                // Inner core white pulse
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+
+                ctx.restore();
             }
         }
 
-        function animate() {
-            if (!isPlaying) return;
-            requestAnimationFrame(animate);
-
-            cinematicTime += 0.016;
-
-            // Режиссура сцены «Твое имя»
-            if (cinematicTime < 12) {
-                // Взлет к звездам
-                camera.position.z -= 1.0;
-                camera.position.y += 0.35;
-                camera.rotation.x = -0.18;
-            } else if (cinematicTime < 27) {
-                // Стремительное падение сквозь облака
-                camera.position.y -= 1.6;
-                camera.position.z += 0.6;
-                camera.rotation.x = 0.4;
-                camera.rotation.z = Math.sin(cinematicTime * 0.6) * 0.12;
-            } else {
-                // Финальный панорамный облет
-                camera.position.x = Math.sin(cinematicTime * 0.3) * 220;
-                camera.position.z = Math.cos(cinematicTime * 0.3) * 220;
-                camera.position.y = 40;
-                camera.rotation.x = 0;
-                camera.rotation.y = -cinematicTime * 0.3;
-                camera.rotation.z = 0;
+        // POLYGON ENEMY (Triangles, Squares, Pentagons, Boss)
+        class PolygonEnemy {
+            constructor(x, y, sides, radius, isBoss = false) {
+                this.x = x;
+                this.y = y;
+                this.sides = sides; // 3 = Triangle, 4 = Square, etc.
+                this.radius = radius;
+                this.rotation = Math.random() * Math.PI;
+                this.rotSpeed = (Math.random() - 0.5) * 0.03 * (isBoss ? 0.5 : 1);
+                this.heartRadius = radius * 0.32; // Central vulnerable core
+                this.color = isBoss ? '#ec4899' : (sides === 3 ? '#10b981' : (sides === 4 ? '#3b82f6' : '#f59e0b'));
+                this.isBoss = isBoss;
+                this.hp = isBoss ? 5 : 1;
+                this.maxHp = this.hp;
+                this.pulse = 0;
             }
 
-            // Движение кометы
-            comet.position.x += 1.2;
-            comet.position.y -= 0.6;
-            comet.position.z += 1.5;
+            update() {
+                this.rotation += this.rotSpeed;
+                this.pulse += 0.08;
 
-            starsMesh.rotation.y += 0.0004;
+                // Slow floating movement toward player
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0) {
+                    const speed = this.isBoss ? 0.4 : 0.8;
+                    this.x += (dx / dist) * speed;
+                    this.y += (dy / dist) * speed;
+                }
+            }
 
-            clouds.forEach(c => {
-                c.position.z += 0.7;
-                if (c.position.z > 250) c.position.z = -1200;
+            getVertices() {
+                const verts = [];
+                for (let i = 0; i < this.sides; i++) {
+                    const angle = this.rotation + (i * 2 * Math.PI / this.sides);
+                    verts.push({
+                        x: this.x + Math.cos(angle) * this.radius,
+                        y: this.y + Math.sin(angle) * this.radius
+                    });
+                }
+                return verts;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // 1. Draw Outer Sharp Polygon Body
+                ctx.beginPath();
+                const angleStep = (Math.PI * 2) / this.sides;
+                for (let i = 0; i < this.sides; i++) {
+                    const a = this.rotation + i * angleStep;
+                    const vx = Math.cos(a) * this.radius;
+                    const vy = Math.sin(a) * this.radius;
+                    if (i === 0) ctx.moveTo(vx, vy);
+                    else ctx.lineTo(vx, vy);
+                }
+                ctx.closePath();
+
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.isBoss ? 4 : 3;
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = this.color;
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+                ctx.fill();
+                ctx.stroke();
+
+                // 2. Draw Sharp Angle Highlights (Warning Danger)
+                for (let i = 0; i < this.sides; i++) {
+                    const a = this.rotation + i * angleStep;
+                    ctx.beginPath();
+                    ctx.arc(Math.cos(a) * this.radius, Math.sin(a) * this.radius, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                }
+
+                // 3. Draw Inner Vulnerable HEART / CORE (Target)
+                const currentHeartRadius = this.heartRadius + Math.sin(this.pulse) * 2;
+                ctx.beginPath();
+                ctx.arc(0, 0, currentHeartRadius, 0, Math.PI * 2);
+                ctx.fillStyle = '#f43f5e';
+                ctx.shadowBlur = 16;
+                ctx.shadowColor = '#f43f5e';
+                ctx.fill();
+
+                // Inner pulsing core light
+                ctx.beginPath();
+                ctx.arc(0, 0, currentHeartRadius * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            // Shatter into physics shards when heart is pierced
+            shatter() {
+                // Hit-stop slow motion effect
+                slowMoTime = settings.hitstopDuration;
+                screenShake = (this.isBoss ? 24 : 15) * settings.shakeMultiplier;
+
+                // Explode heart particles
+                for (let i = 0; i < 25; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 8 + 3;
+                    particles.push(new Particle(this.x, this.y, '#f43f5e', Math.random() * 4 + 2, Math.cos(angle) * speed, Math.sin(angle) * speed));
+                }
+
+                // Explode sharp polygon shards
+                for (let i = 0; i < this.sides * 4; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 6 + 2;
+                    particles.push(new Particle(
+                        this.x + (Math.random() - 0.5) * this.radius,
+                        this.y + (Math.random() - 0.5) * this.radius,
+                        this.color,
+                        Math.random() * 6 + 4,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed,
+                        1,
+                        true // isSharp polygon shard
+                    ));
+                }
+            }
+        }
+
+        // Initialize Entities
+        const player = new Player();
+        let enemies = [];
+
+        function spawnEnemy(sides, isBoss = false) {
+            const radius = isBoss ? 65 : 28 + sides * 4;
+            // Spawn at random screen edges
+            let x, y;
+            if (Math.random() < 0.5) {
+                x = Math.random() < 0.5 ? -radius : canvas.width + radius;
+                y = Math.random() * canvas.height;
+            } else {
+                x = Math.random() * canvas.width;
+                y = Math.random() < 0.5 ? -radius : canvas.height + radius;
+            }
+
+            if (isBoss) {
+                enemies.push(new PolygonEnemy(canvas.width / 2, 100, 12, radius, true));
+                document.getElementById('bossHpContainer').classList.remove('hidden');
+                updateBossHpUI(1, 1);
+            } else {
+                enemies.push(new PolygonEnemy(x, y, sides, radius, false));
+            }
+        }
+
+        function updateBossHpUI(current, max) {
+            const pct = Math.max(0, (current / max) * 100);
+            document.getElementById('bossHpBar').style.width = pct + '%';
+            document.getElementById('bossHpText').innerText = Math.ceil(pct) + '%';
+        }
+
+        // SPAWN BUTTON EVENT LISTENERS
+        document.getElementById('spawnTriBtn').addEventListener('click', () => spawnEnemy(3));
+        document.getElementById('spawnSquareBtn').addEventListener('click', () => spawnEnemy(4));
+        document.getElementById('spawnPentaBtn').addEventListener('click', () => spawnEnemy(5));
+        document.getElementById('spawnBossBtn').addEventListener('click', () => spawnEnemy(12, true));
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            enemies = [];
+            document.getElementById('bossHpContainer').classList.add('hidden');
+        });
+
+        // Initial default enemies
+        spawnEnemy(3);
+        spawnEnemy(4);
+
+        // COLLISION DETECTOR (Circle vs Polygon & Heart)
+        function checkCollisions() {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                const distToCenter = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+
+                // 1. HEART PUNCTURE COLLISION (Hit central core)
+                if (distToCenter < player.radius + enemy.heartRadius) {
+                    // SUCCESS! Destroy enemy from inside
+                    enemy.hp--;
+
+                    if (enemy.isBoss) {
+                        updateBossHpUI(enemy.hp, enemy.maxHp);
+                        player.vx = -player.vx * 1.2;
+                        player.vy = -player.vy * 1.2;
+                        enemy.shatter();
+
+                        if (enemy.hp <= 0) {
+                            enemies.splice(i, 1);
+                            document.getElementById('bossHpContainer').classList.add('hidden');
+                            addScore(500);
+                        }
+                    } else {
+                        enemy.shatter();
+                        enemies.splice(i, 1);
+                        addScore(100);
+
+                        // Auto respawn standard shapes
+                        setTimeout(() => spawnEnemy(Math.floor(Math.random() * 3) + 3), 1500);
+                    }
+                    continue;
+                }
+
+                // 2. SHARP OUTER EDGE COLLISION (Damage / Pushback)
+                if (distToCenter < player.radius + enemy.radius) {
+                    const pushAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                    const pushForce = 12;
+
+                    // Player takes damage from sharp outer geometry
+                    player.takeDamage(15, Math.cos(pushAngle) * pushForce, Math.sin(pushAngle) * pushForce);
+
+                    // Break combo
+                    combo = 0;
+                    document.getElementById('comboText').innerText = 'x0';
+                }
+            }
+        }
+
+        function addScore(pts) {
+            combo++;
+            comboTimer = 180; // 3 seconds to chain
+            score += pts * combo;
+            document.getElementById('scoreText').innerText = score;
+            document.getElementById('comboText').innerText = 'x' + combo;
+        }
+
+        // GAME LOOP
+        let lastTime = performance.now();
+
+        function gameLoop(now) {
+            const dt = now - lastTime;
+            lastTime = now;
+
+            // Handle Hit-stop Slow motion delay
+            if (slowMoTime > 0) {
+                slowMoTime -= dt;
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            // Update Game Logic
+            player.update();
+            enemies.forEach(e => e.update());
+            particles.forEach((p, idx) => {
+                p.update();
+                if (p.alpha <= 0) particles.splice(idx, 1);
             });
 
-            updateSubtitles(cinematicTime);
-            renderer.render(scene, camera);
+            checkCollisions();
+
+            // Combo timer countdown
+            if (comboTimer > 0) {
+                comboTimer--;
+                if (comboTimer <= 0) {
+                    combo = 0;
+                    document.getElementById('comboText').innerText = 'x0';
+                }
+            }
+
+            // Screen Shake Decay
+            let shakeX = 0, shakeY = 0;
+            if (screenShake > 0) {
+                shakeX = (Math.random() - 0.5) * screenShake;
+                shakeY = (Math.random() - 0.5) * screenShake;
+                screenShake *= 0.85;
+            }
+
+            // RENDER PASS
+            ctx.save();
+            ctx.translate(shakeX, shakeY);
+
+            // Clear Screen
+            ctx.fillStyle = '#0a0d14';
+            ctx.fillRect(-20, -20, canvas.width + 40, canvas.height + 40);
+
+            // Draw Background Grid
+            ctx.strokeStyle = 'rgba(30, 41, 59, 0.3)';
+            ctx.lineWidth = 1;
+            const gridSize = 50;
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw Entities
+            particles.forEach(p => p.draw(ctx));
+            enemies.forEach(e => e.draw(ctx));
+            player.draw(ctx);
+
+            ctx.restore();
+
+            requestAnimationFrame(gameLoop);
         }
+
+        // Start Loop
+        requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
