@@ -1,189 +1,140 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Circle vs Polygons - Interactive Game Design Prototype</title>
-    <!-- Tailwind CSS for UI Layout -->
+    <title>Дуэль: Круг против Многоугольников</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #0b0f19;
-            color: #e2e8f0;
+            background-color: #030712;
+            color: #f3f4f6;
             user-select: none;
-            overflow-x: hidden;
+            overflow: hidden;
         }
         canvas {
             display: block;
             touch-action: none;
-            background: radial-gradient(circle at center, #111827 0%, #030712 100%);
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
         }
-        /* Custom scrollbar for control panels */
-        ::-webkit-scrollbar {
-            width: 6px;
+        .text-glow-cyan {
+            text-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
         }
-        ::-webkit-scrollbar-track {
-            background: #111827;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
+        .text-glow-rose {
+            text-shadow: 0 0 10px rgba(244, 63, 94, 0.6);
         }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col md:flex-row overflow-hidden">
 
     <!-- GAME CANVAS CONTAINER -->
-    <div class="relative flex-1 h-2/3 md:h-full bg-black overflow-hidden flex flex-col">
-        <!-- Canvas Element -->
+    <div class="relative flex-1 h-full bg-black overflow-hidden flex flex-col">
         <canvas id="gameCanvas" class="w-full h-full flex-1"></canvas>
 
-        <!-- On-Screen HUD Overlay -->
+        <!-- HUD OVERLAY -->
         <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
-            <!-- Stats -->
-            <div class="bg-gray-900/80 backdrop-blur-md border border-cyan-500/30 p-3 rounded-xl shadow-lg flex gap-4 text-xs md:text-sm">
+            <!-- PLAYER STATS -->
+            <div class="bg-slate-900/85 border border-cyan-500/40 p-3 rounded-2xl backdrop-blur-md shadow-2xl flex gap-4 text-xs md:text-sm">
                 <div>
-                    <span class="text-gray-400 block">PLAYER HP</span>
-                    <div class="w-24 md:w-32 bg-gray-800 h-3 rounded-full overflow-hidden mt-1 border border-gray-700">
-                        <div id="hpBar" class="bg-gradient-to-r from-red-500 to-cyan-400 h-full w-full transition-all duration-200"></div>
+                    <span class="text-slate-400 block font-semibold">ЗДОРОВЬЕ КРУГА</span>
+                    <div class="w-28 md:w-36 bg-slate-800 h-3 rounded-full overflow-hidden mt-1 border border-slate-700">
+                        <div id="playerHpBar" class="bg-gradient-to-r from-cyan-500 to-blue-400 h-full w-full transition-all duration-200"></div>
                     </div>
                 </div>
                 <div>
-                    <span class="text-gray-400 block">COMBO</span>
-                    <span id="comboText" class="text-xl font-extrabold text-cyan-400">x0</span>
-                </div>
-                <div>
-                    <span class="text-gray-400 block">DESTROYED</span>
-                    <span id="scoreText" class="text-xl font-extrabold text-amber-400">0</span>
+                    <span class="text-slate-400 block font-semibold">УКЛОНЕНИЯ</span>
+                    <span id="dodgesText" class="text-lg md:text-xl font-extrabold text-cyan-400 text-glow-cyan">0</span>
                 </div>
             </div>
 
-            <!-- Controls Prompt -->
-            <div class="bg-gray-900/80 backdrop-blur-md border border-gray-700/50 p-3 rounded-xl text-xs text-gray-300 hidden sm:block max-w-xs">
-                <span class="font-bold text-cyan-400">How to Play:</span>
-                <ul class="list-disc list-inside mt-1 space-y-0.5 text-gray-400">
-                    <li><b class="text-gray-200">WASD / Arrows:</b> Roll Circle</li>
-                    <li><b class="text-gray-200">Space / Mouse Click:</b> Dash to Target</li>
-                    <li><b class="text-rose-400">Aim for the glowing Core/Heart!</b> Avoid outer sharp edges!</li>
-                </ul>
+            <!-- ENEMY DUEL STATUS -->
+            <div class="bg-slate-900/85 border border-rose-500/40 p-3 rounded-2xl backdrop-blur-md shadow-2xl text-right text-xs md:text-sm">
+                <div id="enemyName" class="font-black text-rose-400 text-glow-rose tracking-wider">ТРЕУГОЛЬНИК (3 УГЛА = 3 КОПЬЯ)</div>
+                <div class="w-36 md:w-48 bg-slate-800 h-3 rounded-full overflow-hidden mt-1 border border-slate-700 ml-auto">
+                    <div id="enemyHpBar" class="bg-gradient-to-r from-rose-500 to-amber-400 h-full w-full transition-all duration-200"></div>
+                </div>
+                <div id="enemyStateText" class="text-[11px] text-slate-400 mt-1">Ожидание атаки...</div>
             </div>
         </div>
 
-        <!-- Boss Bar Overlay (Hidden by default) -->
-        <div id="bossHpContainer" class="absolute bottom-6 left-1/2 -translate-x-1/2 w-3/4 max-w-md hidden pointer-events-none transition-all duration-300">
-            <div class="bg-gray-900/90 border border-purple-500/50 p-2.5 rounded-xl backdrop-blur-md text-center">
-                <div class="flex justify-between text-xs font-bold text-purple-300 mb-1">
-                    <span>POLY-BOSS (10,000 ANGLES)</span>
-                    <span id="bossHpText">100%</span>
-                </div>
-                <div class="w-full bg-gray-800 h-3 rounded-full overflow-hidden border border-purple-900">
-                    <div id="bossHpBar" class="bg-gradient-to-r from-purple-600 to-pink-500 h-full w-full"></div>
-                </div>
+        <!-- CENTER SKILL PROMPT BANNER -->
+        <div id="skillBanner" class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 transition-all duration-300 transform scale-75 text-center">
+            <span id="skillBannerText" class="text-2xl md:text-4xl font-black italic tracking-widest text-amber-300 text-glow-cyan">ЧИСТЫЙ СКИЛЛ! МИМО!</span>
+            <div id="skillBannerSub" class="text-xs md:text-sm text-cyan-300 mt-1 font-semibold">Враг получил урон от собственной отдачи!</div>
+        </div>
+
+        <!-- CONTROLS & RULES OVERLAY -->
+        <div class="absolute bottom-4 left-4 right-4 flex justify-between items-end pointer-events-none">
+            <div class="bg-slate-900/80 border border-slate-700/60 p-3 rounded-xl backdrop-blur-md text-xs text-slate-300 max-w-sm hidden sm:block">
+                <span class="font-bold text-cyan-400 block mb-1">Правила дуэли:</span>
+                <p class="text-slate-400">Враг выпускает <b class="text-rose-400">копья из всех углов</b>. Уворачивайся в последний момент! Каждый <b class="text-amber-400">промах врага</b> ломает его структуру изнутри.</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-700/60 p-2.5 rounded-xl backdrop-blur-md text-xs text-slate-300 pointer-events-auto flex gap-2">
+                <button id="resetBtn" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 px-3 py-1.5 rounded-lg border border-cyan-500/30 transition">
+                    Сбросить дуэль
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- SIDE PANEL: GAME DESIGN FEEDBACK & CONTROLS -->
-    <div class="w-full md:w-96 h-1/3 md:h-full bg-gray-900 border-t md:border-t-0 md:border-l border-gray-800 flex flex-col p-4 overflow-y-auto">
-        <h2 class="text-lg font-bold text-cyan-400 flex items-center gap-2">
+    <!-- SIDE PANEL & LEVEL CONTROLS -->
+    <div class="w-full md:w-80 h-auto md:h-full bg-slate-900 border-t md:border-t-0 md:border-l border-slate-800 flex flex-col p-4 overflow-y-auto">
+        <h2 class="text-base font-bold text-cyan-400 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            Game Design Prototype
+            Уровни дуэлей
         </h2>
-        <p class="text-xs text-gray-400 mt-1 mb-4">Testing core mechanic: <i>"Circle penetrating heart of sharp polygons"</i>.</p>
+        <p class="text-xs text-slate-400 mt-1 mb-4">Количество копий строго равно количеству углов врага!</p>
 
-        <!-- SPAWN CONTROLS -->
-        <div class="mb-5 bg-gray-800/50 p-3 rounded-xl border border-gray-700/50">
-            <label class="text-xs font-semibold text-gray-300 block mb-2">SPAWN ENEMIES</label>
-            <div class="grid grid-cols-2 gap-2">
-                <button id="spawnTriBtn" class="bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-300 py-1.5 px-3 rounded-lg text-xs font-medium transition active:scale-95">
-                    + Triangle (3)
-                </button>
-                <button id="spawnSquareBtn" class="bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/50 text-blue-300 py-1.5 px-3 rounded-lg text-xs font-medium transition active:scale-95">
-                    + Square (4)
-                </button>
-                <button id="spawnPentaBtn" class="bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/50 text-amber-300 py-1.5 px-3 rounded-lg text-xs font-medium transition active:scale-95">
-                    + Pentagon (5)
-                </button>
-                <button id="spawnBossBtn" class="bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/50 text-purple-300 py-1.5 px-3 rounded-lg text-xs font-medium transition active:scale-95">
-                    + Mega Boss
-                </button>
-            </div>
-            <button id="clearBtn" class="w-full mt-2 bg-gray-700/30 hover:bg-gray-700/60 text-gray-400 py-1 rounded-lg text-xs transition">
-                Clear Field
+        <!-- LEVEL SELECTOR -->
+        <div class="space-y-2 mb-6">
+            <button id="lvl1Btn" class="w-full text-left bg-slate-800/80 hover:bg-slate-700 border border-emerald-500/40 p-2.5 rounded-xl transition text-xs flex justify-between items-center">
+                <div>
+                    <div class="font-bold text-emerald-400">Уровень 1: Треугольник</div>
+                    <div class="text-slate-400 text-[10px]">3 угла = 3 длинных копья</div>
+                </div>
+                <span class="bg-emerald-950 text-emerald-300 text-[10px] px-2 py-0.5 rounded border border-emerald-800">3 Копья</span>
+            </button>
+
+            <button id="lvl2Btn" class="w-full text-left bg-slate-800/80 hover:bg-slate-700 border border-blue-500/40 p-2.5 rounded-xl transition text-xs flex justify-between items-center">
+                <div>
+                    <div class="font-bold text-blue-400">Уровень 2: Квадрат</div>
+                    <div class="text-slate-400 text-[10px]">4 угла = 4 копья крестом</div>
+                </div>
+                <span class="bg-blue-950 text-blue-300 text-[10px] px-2 py-0.5 rounded border border-blue-800">4 Копья</span>
+            </button>
+
+            <button id="lvl3Btn" class="w-full text-left bg-slate-800/80 hover:bg-slate-700 border border-amber-500/40 p-2.5 rounded-xl transition text-xs flex justify-between items-center">
+                <div>
+                    <div class="font-bold text-amber-400">Уровень 3: Пятиугольник</div>
+                    <div class="text-slate-400 text-[10px]">5 углов = 5 быстрых копий</div>
+                </div>
+                <span class="bg-amber-950 text-amber-300 text-[10px] px-2 py-0.5 rounded border border-amber-800">5 Копий</span>
+            </button>
+
+            <button id="lvl4Btn" class="w-full text-left bg-slate-800/80 hover:bg-slate-700 border border-purple-500/40 p-2.5 rounded-xl transition text-xs flex justify-between items-center">
+                <div>
+                    <div class="font-bold text-purple-400">БОСС: Шестиугольник</div>
+                    <div class="text-slate-400 text-[10px]">6 углов = Смертоносный залп</div>
+                </div>
+                <span class="bg-purple-950 text-purple-300 text-[10px] px-2 py-0.5 rounded border border-purple-800">6 Копий</span>
             </button>
         </div>
 
-        <!-- TWEAK SLIDERS -->
-        <div class="mb-5 bg-gray-800/50 p-3 rounded-xl border border-gray-700/50 space-y-3">
-            <label class="text-xs font-semibold text-gray-300 block">GAME JUICE & PHYSICS TUNING</label>
-
-            <div>
-                <div class="flex justify-between text-xs text-gray-400 mb-1">
-                    <span>Screenshake / Juice</span>
-                    <span id="shakeVal" class="text-cyan-400 font-mono">1.0</span>
-                </div>
-                <input id="shakeSlider" type="range" min="0" max="2.5" step="0.1" value="1.0" class="w-full accent-cyan-500">
-            </div>
-
-            <div>
-                <div class="flex justify-between text-xs text-gray-400 mb-1">
-                    <span>Dash Speed / Momentum</span>
-                    <span id="dashVal" class="text-cyan-400 font-mono">18</span>
-                </div>
-                <input id="dashSlider" type="range" min="10" max="30" step="1" value="18" class="w-full accent-cyan-500">
-            </div>
-
-            <div>
-                <div class="flex justify-between text-xs text-gray-400 mb-1">
-                    <span>Hit-Stop / Slow-Mo</span>
-                    <span id="slowmoVal" class="text-cyan-400 font-mono">120ms</span>
-                </div>
-                <input id="slowmoSlider" type="range" min="0" max="300" step="20" value="120" class="w-full accent-cyan-500">
-            </div>
-        </div>
-
-        <!-- DESIGN FEEDBACK ANALYSIS -->
-        <div class="flex-1 bg-gray-950/60 p-3 rounded-xl border border-gray-800 text-xs flex flex-col gap-3">
-            <h3 class="font-bold text-gray-200 border-b border-gray-800 pb-1.5 flex items-center justify-between">
-                <span>DESIGN EVALUATION</span>
-                <span class="text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 px-1.5 py-0.5 rounded">v0.1 Prototype</span>
-            </h3>
-
-            <!-- WHAT WORKS WELL -->
-            <div>
-                <span class="font-bold text-emerald-400 flex items-center gap-1 mb-1">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    What Works Great (Отличные идеи):
-                </span>
-                <ul class="list-disc list-inside text-gray-400 space-y-1 pl-1">
-                    <li><b>High Satisfaction:</b> Puncturing the central heart with slow-mo + particle explosion feels immensely rewarding.</li>
-                    <li><b>Clear Contrast:</b> Smooth rolling circle vs rotating sharp polygons creates immediate readable gameplay.</li>
-                    <li><b>Dynamic Risk/Reward:</b> Aiming for the center heart risks hitting outer sharp edges.</li>
-                </ul>
-            </div>
-
-            <!-- WHAT NEEDS TUNING -->
-            <div>
-                <span class="font-bold text-amber-400 flex items-center gap-1 mb-1">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    What Needs Tuning (Что стоит доработать):
-                </span>
-                <ul class="list-disc list-inside text-gray-400 space-y-1 pl-1">
-                    <li><b>Angle Vulnerability:</b> Outer sharp edges need clear visual warning indicators right before they rotate/strike.</li>
-                    <li><b>Dash Aiming:</b> Mouse-direction dash feels crisp, but mobile touch-swipe requires auto-aim assist toward nearest heart.</li>
-                    <li><b>Heart Armor:</b> Boss hearts need rotating shield plates so the player must timing-click through gaps.</li>
-                </ul>
-            </div>
+        <!-- EXPLANATION BOX -->
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-2 mt-auto">
+            <div class="font-bold text-cyan-400 border-b border-slate-800 pb-1">Суть механики:</div>
+            <ul class="list-disc list-inside space-y-1 text-slate-400 text-[11px]">
+                <li>У врага нет урона от обычного касания тела.</li>
+                <li>Враг заряжается и выкидывает <b class="text-rose-400">копья из всех своих углов</b>.</li>
+                <li>Если ты успеваешь увернуться, энергия копья ломает его <b class="text-amber-300">Сердце изнутри</b> и убавляет его ХП!</li>
+            </ul>
         </div>
     </div>
 
-    <!-- JAVASCRIPT GAME ENGINE -->
+    <!-- ENGINE CODE -->
     <script>
-        // Setup Canvas
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -194,96 +145,61 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Game Parameters & Tuning Settings
-        const settings = {
-            shakeMultiplier: 1.0,
-            dashSpeed: 18,
-            hitstopDuration: 120 // ms
-        };
-
-        // UI Slider Listeners
-        document.getElementById('shakeSlider').addEventListener('input', (e) => {
-            settings.shakeMultiplier = parseFloat(e.target.value);
-            document.getElementById('shakeVal').innerText = settings.shakeMultiplier.toFixed(1);
-        });
-        document.getElementById('dashSlider').addEventListener('input', (e) => {
-            settings.dashSpeed = parseInt(e.target.value);
-            document.getElementById('dashVal').innerText = settings.dashSpeed;
-        });
-        document.getElementById('slowmoSlider').addEventListener('input', (e) => {
-            settings.hitstopDuration = parseInt(e.target.value);
-            document.getElementById('slowmoVal').innerText = settings.hitstopDuration + 'ms';
-        });
-
-        // Game State Variables
+        // Game State
         let screenShake = 0;
-        let slowMoTime = 0;
-        let score = 0;
-        let combo = 0;
-        let comboTimer = 0;
+        let slowMoTimer = 0;
+        let totalDodges = 0;
 
-        // Input Tracking
-        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false, Space: false };
-        let mousePos = { x: canvas.width / 2, y: canvas.height / 2 };
+        // Controls
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+        let touchTarget = null;
 
-        window.addEventListener('keydown', (e) => {
-            if (keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.code)) {
-                keys[e.key] = true;
-                if (e.code === 'Space') {
-                    keys.Space = true;
-                    player.dash();
-                }
+        window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+        canvas.addEventListener('pointerdown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            touchTarget = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        });
+        canvas.addEventListener('pointermove', (e) => {
+            if (e.buttons > 0) {
+                const rect = canvas.getBoundingClientRect();
+                touchTarget = { x: e.clientX - rect.left, y: e.clientY - rect.top };
             }
         });
-        window.addEventListener('keyup', (e) => {
-            if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
-            if (e.code === 'Space') keys.Space = false;
-        });
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            mousePos.x = e.clientX - rect.left;
-            mousePos.y = e.clientY - rect.top;
-        });
-        canvas.addEventListener('mousedown', () => {
-            player.dash();
-        });
+        canvas.addEventListener('pointerup', () => { touchTarget = null; });
 
-        // Particle System
+        // Particle Class
         class Particle {
-            constructor(x, y, color, size, speedX, speedY, life = 1, isSharp = false) {
+            constructor(x, y, color, size, vx, vy, isSharp = false) {
                 this.x = x;
                 this.y = y;
                 this.color = color;
                 this.size = size;
-                this.vx = speedX;
-                this.vy = speedY;
+                this.vx = vx;
+                this.vy = vy;
                 this.alpha = 1;
-                this.life = life;
                 this.decay = 0.015 + Math.random() * 0.02;
                 this.isSharp = isSharp;
                 this.angle = Math.random() * Math.PI * 2;
-                this.rotSpeed = (Math.random() - 0.5) * 0.2;
             }
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vx *= 0.96;
-                this.vy *= 0.96;
+                this.vx *= 0.95;
+                this.vy *= 0.95;
                 this.alpha -= this.decay;
-                this.angle += this.rotSpeed;
+                this.angle += 0.1;
             }
             draw(ctx) {
                 if (this.alpha <= 0) return;
                 ctx.save();
                 ctx.globalAlpha = Math.max(0, this.alpha);
                 ctx.fillStyle = this.color;
-                ctx.shadowBlur = 8;
-                ctx.shadowColor = this.color;
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
 
                 if (this.isSharp) {
-                    // Draw triangular polygon shard
                     ctx.beginPath();
                     ctx.moveTo(0, -this.size * 1.5);
                     ctx.lineTo(this.size, this.size);
@@ -291,7 +207,6 @@
                     ctx.closePath();
                     ctx.fill();
                 } else {
-                    // Glowing circular particle
                     ctx.beginPath();
                     ctx.arc(0, 0, this.size, 0, Math.PI * 2);
                     ctx.fill();
@@ -301,112 +216,71 @@
         }
         let particles = [];
 
-        // PLAYER: Glowing Smooth Circle
+        // PLAYER CLASS (Smooth Circle)
         class Player {
             constructor() {
                 this.x = canvas.width / 2;
-                this.y = canvas.height / 2;
-                this.radius = 18;
-                this.vx = 0;
-                this.vy = 0;
-                this.accel = 0.8;
-                this.friction = 0.88;
+                this.y = canvas.height / 2 + 150;
+                this.radius = 20;
+                this.speed = 6.5;
                 this.hp = 100;
                 this.maxHp = 100;
-                this.isDashing = false;
-                this.dashCooldown = 0;
-                this.glowPhase = 0;
             }
-
             update() {
-                // Movement input
-                if (keys.a || keys.ArrowLeft) this.vx -= this.accel;
-                if (keys.d || keys.ArrowRight) this.vx += this.accel;
-                if (keys.w || keys.ArrowUp) this.vy -= this.accel;
-                if (keys.s || keys.ArrowDown) this.vy += this.accel;
+                // Keyboard Movement
+                let dx = 0, dy = 0;
+                if (keys.a || keys.ArrowLeft) dx -= 1;
+                if (keys.d || keys.ArrowRight) dx += 1;
+                if (keys.w || keys.ArrowUp) dy -= 1;
+                if (keys.s || keys.ArrowDown) dy += 1;
 
-                // Physics update
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vx *= this.friction;
-                this.vy *= this.friction;
-
-                // Canvas boundaries bounce
-                if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -0.5; }
-                if (this.x + this.radius > canvas.width) { this.x = canvas.width - this.radius; this.vx *= -0.5; }
-                if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -0.5; }
-                if (this.y + this.radius > canvas.height) { this.y = canvas.height - this.radius; this.vy *= -0.5; }
-
-                if (this.dashCooldown > 0) this.dashCooldown--;
-                if (Math.hypot(this.vx, this.vy) < 2) this.isDashing = false;
-
-                this.glowPhase += 0.05;
-
-                // Leave trail particles when moving fast
-                if (Math.hypot(this.vx, this.vy) > 4) {
-                    particles.push(new Particle(this.x, this.y, '#06b6d4', Math.random() * 3 + 2, -this.vx * 0.2, -this.vy * 0.2));
+                if (dx !== 0 && dy !== 0) {
+                    dx *= 0.7071;
+                    dy *= 0.7071;
                 }
-            }
 
-            dash() {
-                if (this.dashCooldown > 0) return;
-                // Dash towards mouse position
-                const dx = mousePos.x - this.x;
-                const dy = mousePos.y - this.y;
-                const dist = Math.hypot(dx, dy);
-                if (dist > 0) {
-                    this.vx = (dx / dist) * settings.dashSpeed;
-                    this.vy = (dy / dist) * settings.dashSpeed;
-                    this.isDashing = true;
-                    this.dashCooldown = 20;
+                this.x += dx * this.speed;
+                this.y += dy * this.speed;
 
-                    // Dash burst effects
-                    for (let i = 0; i < 12; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const spd = Math.random() * 4 + 2;
-                        particles.push(new Particle(this.x, this.y, '#22d3ee', 4, Math.cos(angle) * spd, Math.sin(angle) * spd));
+                // Touch / Mouse Smooth Follow
+                if (touchTarget) {
+                    const tdx = touchTarget.x - this.x;
+                    const tdy = touchTarget.y - this.y;
+                    const dist = Math.hypot(tdx, tdy);
+                    if (dist > 5) {
+                        this.x += (tdx / dist) * Math.min(dist, this.speed * 1.2);
+                        this.y += (tdy / dist) * Math.min(dist, this.speed * 1.2);
                     }
                 }
-            }
 
-            takeDamage(amount, bounceVx, bounceVy) {
-                this.hp = Math.max(0, this.hp - amount);
-                this.vx = bounceVx;
-                this.vy = bounceVy;
-                screenShake = 12 * settings.shakeMultiplier;
-                document.getElementById('hpBar').style.width = (this.hp / this.maxHp * 100) + '%';
+                // Boundaries
+                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
 
-                // Red damage sparks
-                for (let i = 0; i < 10; i++) {
-                    particles.push(new Particle(this.x, this.y, '#ef4444', 3, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8));
+                // Trail particles
+                if (Math.random() < 0.3) {
+                    particles.push(new Particle(this.x, this.y, '#22d3ee', 3, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2));
                 }
             }
-
             draw(ctx) {
                 ctx.save();
                 ctx.translate(this.x, this.y);
 
-                // Outer aura glow
-                const glowSize = this.radius + 6 + Math.sin(this.glowPhase) * 3;
-                const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, glowSize * 1.5);
-                grad.addColorStop(0, '#22d3ee');
-                grad.addColorStop(0.5, 'rgba(6, 182, 212, 0.4)');
-                grad.addColorStop(1, 'rgba(6, 182, 212, 0)');
-
-                ctx.fillStyle = grad;
+                // Outer Smooth Aura
                 ctx.beginPath();
-                ctx.arc(0, 0, glowSize * 1.5, 0, Math.PI * 2);
+                ctx.arc(0, 0, this.radius + 6, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(34, 211, 238, 0.25)';
                 ctx.fill();
 
-                // Core Smooth Circle Body
+                // Core Smooth Circle
                 ctx.beginPath();
                 ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.isDashing ? '#ffffff' : '#06b6d4';
-                ctx.shadowBlur = this.isDashing ? 20 : 12;
+                ctx.fillStyle = '#06b6d4';
+                ctx.shadowBlur = 15;
                 ctx.shadowColor = '#22d3ee';
                 ctx.fill();
 
-                // Inner core white pulse
+                // Inner Bright Nucleus
                 ctx.beginPath();
                 ctx.arc(0, 0, this.radius * 0.4, 0, Math.PI * 2);
                 ctx.fillStyle = '#ffffff';
@@ -416,267 +290,314 @@
             }
         }
 
-        // POLYGON ENEMY (Triangles, Squares, Pentagons, Boss)
-        class PolygonEnemy {
-            constructor(x, y, sides, radius, isBoss = false) {
-                this.x = x;
-                this.y = y;
-                this.sides = sides; // 3 = Triangle, 4 = Square, etc.
-                this.radius = radius;
-                this.rotation = Math.random() * Math.PI;
-                this.rotSpeed = (Math.random() - 0.5) * 0.03 * (isBoss ? 0.5 : 1);
-                this.heartRadius = radius * 0.32; // Central vulnerable core
-                this.color = isBoss ? '#ec4899' : (sides === 3 ? '#10b981' : (sides === 4 ? '#3b82f6' : '#f59e0b'));
-                this.isBoss = isBoss;
-                this.hp = isBoss ? 5 : 1;
-                this.maxHp = this.hp;
-                this.pulse = 0;
+        // ENEMY POLYGON DUEL BOSS
+        class PolygonBoss {
+            constructor(sides, name, color) {
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2 - 80;
+                this.sides = sides; // 3 = Tri, 4 = Square, 5 = Penta, 6 = Hexa
+                this.name = name;
+                this.color = color;
+                this.radius = 45 + sides * 4;
+                this.hp = 100;
+                this.maxHp = 100;
+                this.rotation = 0;
+                this.rotSpeed = 0.015;
+
+                // Spear Attack Logic State
+                this.state = 'IDLE'; // IDLE, CHARGING, EXTENDING, RETRACTING, SHATTERED
+                this.attackTimer = 0;
+                this.spearLength = 0;
+                this.maxSpearLength = Math.max(canvas.width, canvas.height);
+                this.spearHitPlayer = false;
             }
 
             update() {
+                if (this.state === 'SHATTERED') return;
+
                 this.rotation += this.rotSpeed;
-                this.pulse += 0.08;
+                this.attackTimer++;
 
-                // Slow floating movement toward player
-                const dx = player.x - this.x;
-                const dy = player.y - this.y;
-                const dist = Math.hypot(dx, dy);
-                if (dist > 0) {
-                    const speed = this.isBoss ? 0.4 : 0.8;
-                    this.x += (dx / dist) * speed;
-                    this.y += (dy / dist) * speed;
+                // State Machine for Spear Attack
+                if (this.state === 'IDLE') {
+                    document.getElementById('enemyStateText').innerText = 'Замысел атаки...';
+                    if (this.attackTimer > 100) {
+                        this.state = 'CHARGING';
+                        this.attackTimer = 0;
+                    }
+                } 
+                else if (this.state === 'CHARGING') {
+                    document.getElementById('enemyStateText').innerText = '⚠️ ЗАРЯДКА КОПИЙ ИЗ УГЛОВ!';
+                    // Shake slightly when charging
+                    this.x += (Math.random() - 0.5) * 2;
+                    if (this.attackTimer > 60) { // 1 second charge warning
+                        this.state = 'EXTENDING';
+                        this.attackTimer = 0;
+                        this.spearLength = 0;
+                        this.spearHitPlayer = false;
+                    }
+                } 
+                else if (this.state === 'EXTENDING') {
+                    document.getElementById('enemyStateText').innerText = '🔥 ВЫСТРЕЛ КОПИЙ!';
+                    this.spearLength += 45; // Rapid thrust speed
+
+                    // Check Collision with Spears
+                    if (!this.spearHitPlayer) {
+                        const hit = this.checkSpearCollision(player);
+                        if (hit) {
+                            this.spearHitPlayer = true;
+                            player.hp = Math.max(0, player.hp - 25);
+                            document.getElementById('playerHpBar').style.width = player.hp + '%';
+                            screenShake = 15;
+                        }
+                    }
+
+                    if (this.spearLength >= this.maxSpearLength) {
+                        this.state = 'RETRACTING';
+                        this.attackTimer = 0;
+
+                        // EVALUATE MISS DAMAGE (IF PLAYER WAS NOT HIT)
+                        if (!this.spearHitPlayer) {
+                            this.takeMissDamage();
+                        }
+                    }
+                } 
+                else if (this.state === 'RETRACTING') {
+                    this.spearLength -= 60;
+                    if (this.spearLength <= 0) {
+                        this.spearLength = 0;
+                        this.state = 'IDLE';
+                        this.attackTimer = 0;
+                    }
                 }
             }
 
-            getVertices() {
-                const verts = [];
-                for (let i = 0; i < this.sides; i++) {
-                    const angle = this.rotation + (i * 2 * Math.PI / this.sides);
-                    verts.push({
-                        x: this.x + Math.cos(angle) * this.radius,
-                        y: this.y + Math.sin(angle) * this.radius
-                    });
+            takeMissDamage() {
+                // Self-damage on miss mechanic
+                const damage = 25; // 4 misses = dead enemy
+                this.hp = Math.max(0, this.hp - damage);
+                document.getElementById('enemyHpBar').style.width = this.hp + '%';
+
+                totalDodges++;
+                document.getElementById('dodgesText').innerText = totalDodges;
+
+                // Show Skill Banner
+                triggerSkillBanner();
+                screenShake = 12;
+                slowMoTimer = 10;
+
+                // Sparks from corners due to energy recoil
+                const corners = this.getCornerPositions();
+                corners.forEach(c => {
+                    for (let i = 0; i < 8; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        particles.push(new Particle(c.x, c.y, '#f59e0b', 4, Math.cos(angle) * 6, Math.sin(angle) * 6));
+                    }
+                });
+
+                if (this.hp <= 0) {
+                    this.shatter();
                 }
-                return verts;
             }
 
-            draw(ctx) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-
-                // 1. Draw Outer Sharp Polygon Body
-                ctx.beginPath();
+            getCornerPositions() {
+                const corners = [];
                 const angleStep = (Math.PI * 2) / this.sides;
                 for (let i = 0; i < this.sides; i++) {
                     const a = this.rotation + i * angleStep;
-                    const vx = Math.cos(a) * this.radius;
-                    const vy = Math.sin(a) * this.radius;
-                    if (i === 0) ctx.moveTo(vx, vy);
-                    else ctx.lineTo(vx, vy);
+                    corners.push({
+                        x: this.x + Math.cos(a) * this.radius,
+                        y: this.y + Math.sin(a) * this.radius,
+                        angle: a
+                    });
                 }
+                return corners;
+            }
+
+            checkSpearCollision(playerObj) {
+                const corners = this.getCornerPositions();
+                for (let c of corners) {
+                    // Line from corner outwards along 'c.angle' by 'this.spearLength'
+                    const x1 = c.x;
+                    const y1 = c.y;
+                    const x2 = c.x + Math.cos(c.angle) * this.spearLength;
+                    const y2 = c.y + Math.sin(c.angle) * this.spearLength;
+
+                    // Distance from player circle center to line segment
+                    const dist = distToSegment({ x: playerObj.x, y: playerObj.y }, { x: x1, y: y1 }, { x: x2, y: y2 });
+                    if (dist < playerObj.radius + 6) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            shatter() {
+                this.state = 'SHATTERED';
+                document.getElementById('enemyStateText').innerText = '💥 РАЗОРВАН ИЗНУТРИ!';
+                screenShake = 30;
+                slowMoTimer = 20;
+
+                // Shatter into shards
+                for (let i = 0; i < 60; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const spd = Math.random() * 10 + 3;
+                    particles.push(new Particle(this.x, this.y, this.color, Math.random() * 8 + 4, Math.cos(angle) * spd, Math.sin(angle) * spd, true));
+                }
+            }
+
+            draw(ctx) {
+                if (this.state === 'SHATTERED') return;
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                const corners = [];
+                const angleStep = (Math.PI * 2) / this.sides;
+                for (let i = 0; i < this.sides; i++) {
+                    const a = this.rotation + i * angleStep;
+                    corners.push({
+                        x: Math.cos(a) * this.radius,
+                        y: Math.sin(a) * this.radius,
+                        angle: a
+                    });
+                }
+
+                // 1. DRAW EXTENDING SPEARS FROM EVERY CORNER (EXACTLY EQUAL TO CORNER COUNT)
+                if (this.spearLength > 0) {
+                    corners.forEach(c => {
+                        ctx.save();
+                        ctx.translate(c.x, c.y);
+                        ctx.rotate(c.angle);
+
+                        // Spear Line
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(this.spearLength, 0);
+                        ctx.strokeStyle = '#f43f5e';
+                        ctx.lineWidth = 8;
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = '#f43f5e';
+                        ctx.stroke();
+
+                        // Sharp Spear Tip
+                        ctx.beginPath();
+                        ctx.moveTo(this.spearLength + 15, 0);
+                        ctx.lineTo(this.spearLength - 10, -10);
+                        ctx.lineTo(this.spearLength - 10, 10);
+                        ctx.closePath();
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fill();
+
+                        ctx.restore();
+                    });
+                }
+
+                // 2. DRAW CHARGING PREVIEW LINES
+                if (this.state === 'CHARGING') {
+                    corners.forEach(c => {
+                        ctx.save();
+                        ctx.translate(c.x, c.y);
+                        ctx.rotate(c.angle);
+
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(300, 0);
+                        ctx.strokeStyle = 'rgba(244, 63, 94, 0.4)';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([6, 6]);
+                        ctx.stroke();
+
+                        ctx.restore();
+                    });
+                }
+
+                // 3. DRAW MAIN POLYGON BODY
+                ctx.beginPath();
+                corners.forEach((c, i) => {
+                    if (i === 0) ctx.moveTo(c.x, c.y);
+                    else ctx.lineTo(c.x, c.y);
+                });
                 ctx.closePath();
 
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
                 ctx.strokeStyle = this.color;
-                ctx.lineWidth = this.isBoss ? 4 : 3;
-                ctx.shadowBlur = 12;
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 15;
                 ctx.shadowColor = this.color;
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
                 ctx.fill();
                 ctx.stroke();
 
-                // 2. Draw Sharp Angle Highlights (Warning Danger)
-                for (let i = 0; i < this.sides; i++) {
-                    const a = this.rotation + i * angleStep;
-                    ctx.beginPath();
-                    ctx.arc(Math.cos(a) * this.radius, Math.sin(a) * this.radius, 3, 0, Math.PI * 2);
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fill();
-                }
-
-                // 3. Draw Inner Vulnerable HEART / CORE (Target)
-                const currentHeartRadius = this.heartRadius + Math.sin(this.pulse) * 2;
+                // 4. DRAW INNER HEART / CORE
                 ctx.beginPath();
-                ctx.arc(0, 0, currentHeartRadius, 0, Math.PI * 2);
-                ctx.fillStyle = '#f43f5e';
-                ctx.shadowBlur = 16;
+                ctx.arc(0, 0, 16, 0, Math.PI * 2);
+                ctx.fillStyle = this.state === 'CHARGING' ? '#f59e0b' : '#f43f5e';
+                ctx.shadowBlur = 20;
                 ctx.shadowColor = '#f43f5e';
-                ctx.fill();
-
-                // Inner pulsing core light
-                ctx.beginPath();
-                ctx.arc(0, 0, currentHeartRadius * 0.4, 0, Math.PI * 2);
-                ctx.fillStyle = '#ffffff';
                 ctx.fill();
 
                 ctx.restore();
             }
-
-            // Shatter into physics shards when heart is pierced
-            shatter() {
-                // Hit-stop slow motion effect
-                slowMoTime = settings.hitstopDuration;
-                screenShake = (this.isBoss ? 24 : 15) * settings.shakeMultiplier;
-
-                // Explode heart particles
-                for (let i = 0; i < 25; i++) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const speed = Math.random() * 8 + 3;
-                    particles.push(new Particle(this.x, this.y, '#f43f5e', Math.random() * 4 + 2, Math.cos(angle) * speed, Math.sin(angle) * speed));
-                }
-
-                // Explode sharp polygon shards
-                for (let i = 0; i < this.sides * 4; i++) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const speed = Math.random() * 6 + 2;
-                    particles.push(new Particle(
-                        this.x + (Math.random() - 0.5) * this.radius,
-                        this.y + (Math.random() - 0.5) * this.radius,
-                        this.color,
-                        Math.random() * 6 + 4,
-                        Math.cos(angle) * speed,
-                        Math.sin(angle) * speed,
-                        1,
-                        true // isSharp polygon shard
-                    ));
-                }
-            }
         }
 
-        // Initialize Entities
-        const player = new Player();
-        let enemies = [];
-
-        function spawnEnemy(sides, isBoss = false) {
-            const radius = isBoss ? 65 : 28 + sides * 4;
-            // Spawn at random screen edges
-            let x, y;
-            if (Math.random() < 0.5) {
-                x = Math.random() < 0.5 ? -radius : canvas.width + radius;
-                y = Math.random() * canvas.height;
-            } else {
-                x = Math.random() * canvas.width;
-                y = Math.random() < 0.5 ? -radius : canvas.height + radius;
-            }
-
-            if (isBoss) {
-                enemies.push(new PolygonEnemy(canvas.width / 2, 100, 12, radius, true));
-                document.getElementById('bossHpContainer').classList.remove('hidden');
-                updateBossHpUI(1, 1);
-            } else {
-                enemies.push(new PolygonEnemy(x, y, sides, radius, false));
-            }
+        // Distance Helper for Collision
+        function distToSegment(p, v, w) {
+            function sqr(x) { return x * x }
+            function dist2(v, w) { return sqr(v.x - w.x) + sqr(v.y - w.y) }
+            var l2 = dist2(v, w);
+            if (l2 == 0) return Math.sqrt(dist2(p, v));
+            var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            return Math.sqrt(dist2(p, { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) }));
         }
 
-        function updateBossHpUI(current, max) {
-            const pct = Math.max(0, (current / max) * 100);
-            document.getElementById('bossHpBar').style.width = pct + '%';
-            document.getElementById('bossHpText').innerText = Math.ceil(pct) + '%';
+        // Skill Banner Animate Trigger
+        function triggerSkillBanner() {
+            const banner = document.getElementById('skillBanner');
+            banner.classList.remove('opacity-0', 'scale-75');
+            banner.classList.add('opacity-100', 'scale-100');
+            setTimeout(() => {
+                banner.classList.remove('opacity-100', 'scale-100');
+                banner.classList.add('opacity-0', 'scale-75');
+            }, 1000);
         }
 
-        // SPAWN BUTTON EVENT LISTENERS
-        document.getElementById('spawnTriBtn').addEventListener('click', () => spawnEnemy(3));
-        document.getElementById('spawnSquareBtn').addEventListener('click', () => spawnEnemy(4));
-        document.getElementById('spawnPentaBtn').addEventListener('click', () => spawnEnemy(5));
-        document.getElementById('spawnBossBtn').addEventListener('click', () => spawnEnemy(12, true));
-        document.getElementById('clearBtn').addEventListener('click', () => {
-            enemies = [];
-            document.getElementById('bossHpContainer').classList.add('hidden');
-        });
+        // Initialize Instances
+        let player = new Player();
+        let boss = new PolygonBoss(3, 'ТРЕУГОЛЬНИК (3 УГЛА = 3 КОПЬЯ)', '#10b981');
 
-        // Initial default enemies
-        spawnEnemy(3);
-        spawnEnemy(4);
-
-        // COLLISION DETECTOR (Circle vs Polygon & Heart)
-        function checkCollisions() {
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                const enemy = enemies[i];
-                const distToCenter = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-
-                // 1. HEART PUNCTURE COLLISION (Hit central core)
-                if (distToCenter < player.radius + enemy.heartRadius) {
-                    // SUCCESS! Destroy enemy from inside
-                    enemy.hp--;
-
-                    if (enemy.isBoss) {
-                        updateBossHpUI(enemy.hp, enemy.maxHp);
-                        player.vx = -player.vx * 1.2;
-                        player.vy = -player.vy * 1.2;
-                        enemy.shatter();
-
-                        if (enemy.hp <= 0) {
-                            enemies.splice(i, 1);
-                            document.getElementById('bossHpContainer').classList.add('hidden');
-                            addScore(500);
-                        }
-                    } else {
-                        enemy.shatter();
-                        enemies.splice(i, 1);
-                        addScore(100);
-
-                        // Auto respawn standard shapes
-                        setTimeout(() => spawnEnemy(Math.floor(Math.random() * 3) + 3), 1500);
-                    }
-                    continue;
-                }
-
-                // 2. SHARP OUTER EDGE COLLISION (Damage / Pushback)
-                if (distToCenter < player.radius + enemy.radius) {
-                    const pushAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-                    const pushForce = 12;
-
-                    // Player takes damage from sharp outer geometry
-                    player.takeDamage(15, Math.cos(pushAngle) * pushForce, Math.sin(pushAngle) * pushForce);
-
-                    // Break combo
-                    combo = 0;
-                    document.getElementById('comboText').innerText = 'x0';
-                }
-            }
+        function loadLevel(sides, name, color) {
+            player = new Player();
+            boss = new PolygonBoss(sides, name, color);
+            document.getElementById('enemyName').innerText = name;
+            document.getElementById('enemyHpBar').style.width = '100%';
+            document.getElementById('playerHpBar').style.width = '100%';
         }
 
-        function addScore(pts) {
-            combo++;
-            comboTimer = 180; // 3 seconds to chain
-            score += pts * combo;
-            document.getElementById('scoreText').innerText = score;
-            document.getElementById('comboText').innerText = 'x' + combo;
-        }
+        // Level Buttons Listeners
+        document.getElementById('lvl1Btn').addEventListener('click', () => loadLevel(3, 'ТРЕУГОЛЬНИК (3 УГЛА = 3 КОПЬЯ)', '#10b981'));
+        document.getElementById('lvl2Btn').addEventListener('click', () => loadLevel(4, 'КВАДРАТ (4 УГЛА = 4 КОПЬЯ)', '#3b82f6'));
+        document.getElementById('lvl3Btn').addEventListener('click', () => loadLevel(5, 'ПЯТИУГОЛЬНИК (5 УГЛОВ = 5 КОПИЙ)', '#f59e0b'));
+        document.getElementById('lvl4Btn').addEventListener('click', () => loadLevel(6, 'БОСС: ШЕСТИУГОЛЬНИК (6 КОПИЙ)', '#a855f7'));
+        document.getElementById('resetBtn').addEventListener('click', () => loadLevel(boss.sides, boss.name, boss.color));
 
-        // GAME LOOP
-        let lastTime = performance.now();
-
-        function gameLoop(now) {
-            const dt = now - lastTime;
-            lastTime = now;
-
-            // Handle Hit-stop Slow motion delay
-            if (slowMoTime > 0) {
-                slowMoTime -= dt;
+        // MAIN GAME LOOP
+        function gameLoop() {
+            if (slowMoTimer > 0) {
+                slowMoTimer--;
                 requestAnimationFrame(gameLoop);
                 return;
             }
 
-            // Update Game Logic
+            // Updates
             player.update();
-            enemies.forEach(e => e.update());
+            boss.update();
             particles.forEach((p, idx) => {
                 p.update();
                 if (p.alpha <= 0) particles.splice(idx, 1);
             });
 
-            checkCollisions();
-
-            // Combo timer countdown
-            if (comboTimer > 0) {
-                comboTimer--;
-                if (comboTimer <= 0) {
-                    combo = 0;
-                    document.getElementById('comboText').innerText = 'x0';
-                }
-            }
-
-            // Screen Shake Decay
+            // Screen Shake
             let shakeX = 0, shakeY = 0;
             if (screenShake > 0) {
                 shakeX = (Math.random() - 0.5) * screenShake;
@@ -684,34 +605,25 @@
                 screenShake *= 0.85;
             }
 
-            // RENDER PASS
+            // Render
             ctx.save();
             ctx.translate(shakeX, shakeY);
 
-            // Clear Screen
-            ctx.fillStyle = '#0a0d14';
+            ctx.fillStyle = '#020617';
             ctx.fillRect(-20, -20, canvas.width + 40, canvas.height + 40);
 
-            // Draw Background Grid
-            ctx.strokeStyle = 'rgba(30, 41, 59, 0.3)';
+            // Subtle Background Grid
+            ctx.strokeStyle = 'rgba(30, 41, 59, 0.25)';
             ctx.lineWidth = 1;
-            const gridSize = 50;
-            for (let x = 0; x < canvas.width; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
+            for (let x = 0; x < canvas.width; x += 40) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
             }
-            for (let y = 0; y < canvas.height; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
+            for (let y = 0; y < canvas.height; y += 40) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
             }
 
-            // Draw Entities
             particles.forEach(p => p.draw(ctx));
-            enemies.forEach(e => e.draw(ctx));
+            boss.draw(ctx);
             player.draw(ctx);
 
             ctx.restore();
@@ -719,7 +631,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Start Loop
         requestAnimationFrame(gameLoop);
     </script>
 </body>
