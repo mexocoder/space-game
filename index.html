@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Круг против Углов: Дуэль Копий</title>
+    <title>Круг против Углов: Геометрическая Дуэль</title>
     <style>
         * {
             box-sizing: border-box;
@@ -19,22 +19,21 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
         }
-        #fullscreen-container {
+        #game-container {
             position: relative;
             width: 100vw;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: radial-gradient(circle at center, #0a0f24 0%, #03050a 100%);
+            background: radial-gradient(circle at center, #0a0f24 0%, #020307 100%);
         }
         canvas {
             display: block;
             background: #020307;
             cursor: none;
         }
-        /* Главное меню и экраны */
-        .screen-overlay {
+        .overlay {
             position: absolute;
             top: 0;
             left: 0;
@@ -49,16 +48,17 @@
             gap: 20px;
         }
         h1 {
-            font-size: 48px;
+            font-size: 42px;
             color: #00e5ff;
             text-transform: uppercase;
             letter-spacing: 3px;
-            text-shadow: 0 0 20px rgba(0,229,255,0.4);
+            text-shadow: 0 0 20px rgba(0,229,255,0.5);
+            text-align: center;
         }
         p {
             color: #8a9bb8;
             font-size: 16px;
-            max-width: 500px;
+            max-width: 550px;
             text-align: center;
             line-height: 1.5;
         }
@@ -66,7 +66,7 @@
             background: #00e5ff;
             color: #03050a;
             border: none;
-            padding: 15px 40px;
+            padding: 16px 45px;
             font-size: 18px;
             font-weight: bold;
             border-radius: 8px;
@@ -78,7 +78,7 @@
         }
         .btn:hover {
             background: #4de8ff;
-            box-shadow: 0 0 30px rgba(0,229,255,0.7);
+            box-shadow: 0 0 35px rgba(0,229,255,0.8);
             transform: scale(1.05);
         }
         .btn-danger {
@@ -88,15 +88,14 @@
         }
         .btn-danger:hover {
             background: #ff2a75;
-            box-shadow: 0 0 30px rgba(255,0,85,0.7);
+            box-shadow: 0 0 35px rgba(255,0,85,0.8);
         }
-        /* HUD интерфейс во время игры */
         .hud {
             position: absolute;
             top: 25px;
             left: 25px;
             display: flex;
-            gap: 20px;
+            gap: 15px;
             pointer-events: none;
         }
         .hud-card {
@@ -110,7 +109,6 @@
             font-size: 11px;
             color: #64748b;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
         .hud-value {
             font-size: 22px;
@@ -129,10 +127,10 @@
             backdrop-filter: blur(5px);
             pointer-events: none;
         }
-        .hp-bar-container {
+        .hp-bar {
             background: #1a264a;
-            height: 8px;
-            border-radius: 4px;
+            height: 10px;
+            border-radius: 5px;
             overflow: hidden;
             margin-top: 8px;
         }
@@ -143,46 +141,42 @@
             transition: width 0.2s;
             box-shadow: 0 0 10px #ff0055;
         }
-        .hidden {
-            display: none !important;
-        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="fullscreen-container">
+    <div id="game-container">
         <!-- Главное меню -->
-        <div id="main-menu" class="screen-overlay">
+        <div id="main-menu" class="overlay">
             <h1>Круг против Углов</h1>
-            <p>Управляй Кругом без углов. Уворачивайся от массивных длинных копий, прикрепленных к вершинам врагов. Каждый промах босса ломает его структуру изнутри!</p>
+            <p>Победи геометрию с помощью реакции и инерции. Опасны не только вылетающие на весь экран лучи-копья, но и сам центр босса!</p>
             <button class="btn" onclick="startGame()">Начать игру</button>
         </div>
 
-        <!-- Экран победы / перехода на уровень -->
-        <div id="win-screen" class="screen-overlay hidden">
-            <h1 style="color: #00e5ff;">Враг разорван изнутри!</h1>
-            <p id="win-desc">Уровень пройден. Готов к следующему испытанию?</p>
-            <button class="btn" id="next-level-btn" onclick="nextLevel()">Следующий уровень</button>
+        <!-- Экран победы -->
+        <div id="win-screen" class="overlay hidden">
+            <h1>Структура Разрушена!</h1>
+            <p id="win-desc">Босс разорван собственным переизбытком энергии.</p>
+            <button class="btn" onclick="nextLevel()">Следующий Уровень</button>
         </div>
 
         <!-- Экран поражения -->
-        <div id="gameover-screen" class="screen-overlay hidden">
-            <h1 style="color: #ff0055;">Круг уничтожен</h1>
-            <p>Острые грани оказались сильнее на этот раз.</p>
-            <button class="btn btn-danger" onclick="startGame()">Попробовать снова</button>
+        <div id="gameover-screen" class="overlay hidden">
+            <h1 style="color:#ff0055;">Уничтожен!</h1>
+            <p>Тебя проткнуло гигантскими копьями или ты задел ядро босса.</p>
+            <button class="btn btn-danger" onclick="startGame()">Попробовать Снова</button>
         </div>
 
-        <!-- Канвас игры на весь экран -->
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="canvas"></canvas>
 
-        <!-- Интерфейс HUD -->
         <div class="hud">
             <div class="hud-card">
                 <div class="hud-title">Здоровье Круга</div>
                 <div class="hud-value" id="player-hp">100%</div>
             </div>
             <div class="hud-card">
-                <div class="hud-title">Чистых уклонений</div>
+                <div class="hud-title">Уклонений</div>
                 <div class="hud-value" id="dodge-count">0</div>
             </div>
         </div>
@@ -192,17 +186,16 @@
                 <span style="font-size: 13px; font-weight: bold; color:#ff0055;" id="boss-name">БОСС</span>
                 <span style="font-size: 12px; color: #ff0055;" id="boss-hp-text">100%</span>
             </div>
-            <div class="hp-bar-container">
+            <div class="hp-bar">
                 <div class="hp-fill" id="boss-hp-fill"></div>
             </div>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        // На полный экран
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -210,33 +203,25 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Список всех боссов (от простых до мегагона с миллионом углов)
+        // Настройки уровней и боссов-сеток
         const BOSSES = [
-            { name: "1. ТРЕУГОЛЬНИК", sides: 3, chargeTime: 90, attackSpeed: 4, spearLen: 120, desc: "Базовый противник с 3 длинными копьями." },
-            { name: "2. КВАДРАТ", sides: 4, chargeTime: 80, attackSpeed: 4.5, spearLen: 130, desc: "4 массивных угловых лезвия." },
-            { name: "3. ПЯТИУГОЛЬНИК", sides: 5, chargeTime: 70, attackSpeed: 5, spearLen: 140, desc: "Быстрые выпады пятигранной структуры." },
-            { name: "4. ШЕСТИУГОЛЬНИК", sides: 6, chargeTime: 65, attackSpeed: 5.5, spearLen: 150, desc: "Круговой закрученный удар." },
-            { name: "5. ДЕКАГОН (10 углов)", sides: 10, chargeTime: 55, attackSpeed: 6, spearLen: 160, desc: "Десять смертоносных пик." },
-            { name: "6. ИКОСАГОН (20 углов)", sides: 20, chargeTime: 45, attackSpeed: 6.5, spearLen: 170, desc: "Плотный строй колючих лезвий." },
-            { name: "7. ГЕКАТОНГОН (100 углов)", sides: 100, chargeTime: 35, attackSpeed: 7, spearLen: 180, desc: "Почти идеальный круг из сотен копий." },
-            { name: "8. МЕГАГОН (1,000,000 углов)", sides: 1000, chargeTime: 25, attackSpeed: 8, spearLen: 200, desc: "Финальная геометрическая аномалия." }
+            { name: "1. ТРЕУГОЛЬНИК (3 Угла)", sides: 3, radius: 70, chargeTime: 80, layers: 2 },
+            { name: "2. КВАДРАТ-ГРАФ (4 Угла)", sides: 4, radius: 80, chargeTime: 70, layers: 2 },
+            { name: "3. ПЯТИУГОЛЬНИК (5 Углов)", sides: 5, radius: 90, chargeTime: 65, layers: 3 },
+            { name: "4. ШЕСТИУГОЛЬНЫЙ СИМПЛЕКС", sides: 6, radius: 100, chargeTime: 60, layers: 3 },
+            { name: "5. ДЕКАГОН (10 Углов)", sides: 10, radius: 110, chargeTime: 50, layers: 4 },
+            { name: "6. ИКОСАГОН (20 Углов)", sides: 20, radius: 120, chargeTime: 40, layers: 4 },
+            { name: "7. ГЕКАТОНГОН (100 Углов)", sides: 100, radius: 130, chargeTime: 30, layers: 5 },
+            { name: "8. МЕГАГОН (Священный Граф)", sides: 360, radius: 140, chargeTime: 25, layers: 6 }
         ];
 
         let currentBossIndex = 0;
-        let gameState = 'MENU'; // MENU, PLAYING, WIN, GAMEOVER, TRANSITION
+        let gameState = 'MENU';
 
-        let player = {
-            x: 0, y: 0, radius: 14, hp: 100, speed: 7
-        };
-
-        let boss = {
-            x: 0, y: 0, radius: 55, sides: 3, angle: 0, hp: 100,
-            state: 'IDLE', timer: 0, chargeTime: 90, spearLen: 120,
-            attackSpeed: 4, targetAngle: 0
-        };
-
+        let player = { x: 0, y: 0, radius: 12, hp: 100, speed: 7.5 };
+        let boss = { x: 0, y: 0, radius: 80, sides: 3, angle: 0, hp: 100, state: 'CHARGING', timer: 0 };
         let particles = [];
-        let mouseX = window.innerWidth / 2;
+        let mouseX = window.innerWidth / 4;
         let mouseY = window.innerHeight / 2;
         let dodgeCount = 0;
 
@@ -254,9 +239,9 @@
             gameState = 'PLAYING';
         }
 
-        function initLevel(index) {
-            const bData = BOSSES[index];
-            player.x = window.innerWidth / 4;
+        function initLevel(idx) {
+            const bData = BOSSES[idx];
+            player.x = window.innerWidth / 5;
             player.y = window.innerHeight / 2;
             player.hp = 100;
             dodgeCount = 0;
@@ -264,11 +249,11 @@
             boss.x = window.innerWidth / 2;
             boss.y = window.innerHeight / 2;
             boss.sides = bData.sides;
+            boss.radius = bData.radius;
             boss.chargeTime = bData.chargeTime;
-            boss.spearLen = bData.spearLen;
-            boss.attackSpeed = bData.attackSpeed;
+            boss.layers = bData.layers;
             boss.hp = 100;
-            boss.state = 'IDLE';
+            boss.state = 'CHARGING';
             boss.timer = 0;
             boss.angle = 0;
 
@@ -277,10 +262,7 @@
         }
 
         function nextLevel() {
-            currentBossIndex++;
-            if (currentBossIndex >= BOSSES.length) {
-                currentBossIndex = 0; // Зацикливание или финал
-            }
+            currentBossIndex = (currentBossIndex + 1) % BOSSES.length;
             startGame();
         }
 
@@ -295,22 +277,35 @@
         function createExplosion(x, y, color, count) {
             for (let i = 0; i < count; i++) {
                 const ang = Math.random() * Math.PI * 2;
-                const spd = Math.random() * 10 + 2;
+                const spd = Math.random() * 12 + 2;
                 particles.push({
                     x: x, y: y,
                     vx: Math.cos(ang) * spd,
                     vy: Math.sin(ang) * spd,
-                    life: 50,
+                    life: 45,
                     color: color,
-                    size: Math.random() * 5 + 2
+                    size: Math.random() * 4 + 2
                 });
             }
+        }
+
+        function isPointNearLine(px, py, x1, y1, x2, y2, r) {
+            let A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+            let dot = A * C + B * D;
+            let lenSq = C * C + D * D;
+            let param = lenSq !== 0 ? dot / lenSq : -1;
+            let xx, yy;
+            if (param < 0) { xx = x1; yy = y1; }
+            else if (param > 1) { xx = x2; yy = y2; }
+            else { xx = x1 + param * C; yy = y1 + param * D; }
+            let dx = px - xx, dy = py - yy;
+            return (dx * dx + dy * dy) < (r * r);
         }
 
         function update() {
             if (gameState !== 'PLAYING') return;
 
-            // Плавное следование за курсором мыши для игрока
+            // Плавное следование за курсором
             let dx = mouseX - player.x;
             let dy = mouseY - player.y;
             let dist = Math.hypot(dx, dy);
@@ -319,89 +314,71 @@
                 player.y += (dy / dist) * Math.min(player.speed, dist);
             }
 
-            // Ограничение границами экрана
-            player.x = Math.max(player.radius, Math.min(window.innerWidth - player.radius, player.x));
-            player.y = Math.max(player.radius, Math.min(window.innerHeight - player.radius, player.y));
-
-            // Логика Босса по центру
-            boss.timer++;
-
-            if (boss.state === 'IDLE') {
-                boss.angle += 0.015; // Медленное вращение в покое
-                if (boss.timer >= boss.chargeTime) {
-                    boss.state = 'CHARGING';
-                    boss.timer = 0;
-                    // Нацеливаемся на игрока перед рывком длинных копий
-                    const pdx = player.x - boss.x;
-                    const pdy = player.y - boss.y;
-                    boss.targetAngle = Math.atan2(pdy, pdx);
+            // ПРОВЕРКА: Смертельная зона в центре (Тело Босса)
+            let distToBossCenter = Math.hypot(player.x - boss.x, player.y - boss.y);
+            if (distToBossCenter < boss.radius + player.radius) {
+                player.hp -= 2; // Урон от касания тела босса
+                createExplosion(player.x, player.y, "#ff0055", 3);
+                updateHUD();
+                if (player.hp <= 0) {
+                    gameState = 'GAMEOVER';
+                    document.getElementById('gameover-screen').classList.remove('hidden');
                 }
-            } 
-            else if (boss.state === 'CHARGING') {
-                // Предупреждающая фаза (наведение)
-                boss.angle += (boss.targetAngle - boss.angle) * 0.1;
-                if (boss.timer >= 40) {
+            }
+
+            // Фазы работы босса
+            boss.timer++;
+            boss.angle += 0.01; // Вращение босса
+
+            if (boss.state === 'CHARGING') {
+                if (boss.timer >= boss.chargeTime) {
                     boss.state = 'ATTACKING';
                     boss.timer = 0;
-                }
-            } 
-            else if (boss.state === 'ATTACKING') {
-                // Мощный выпад длинными прикрепленными копьями вперед
-                boss.angle += 0.08; // Закрутка при ударе
-                
-                // Проверка столкновения игрока с длинными копьями, прикрепленными к вершинам
-                const sidesRender = Math.min(boss.sides, 30);
-                let hitPlayer = false;
 
-                for (let i = 0; i < sidesRender; i++) {
-                    let a = boss.angle + (i * Math.PI * 2 / sidesRender);
-                    // Копье торчит из вершины наружу на длину boss.spearLen
-                    let tipX = boss.x + Math.cos(a) * (boss.radius + boss.spearLen);
-                    let tipY = boss.y + Math.sin(a) * (boss.radius + boss.spearLen);
-                    let baseX = boss.x + Math.cos(a) * boss.radius;
-                    let baseY = boss.y + Math.sin(a) * boss.radius;
+                    // Проверяем, проткнули ли копья игрока
+                    let hitBySpear = false;
+                    const sidesRender = Math.min(boss.sides, 36);
+                    const maxDist = Math.max(window.innerWidth, window.innerHeight) * 1.5;
 
-                    // Проверка расстояния от игрока до линии копья
-                    if (isPointNearLine(player.x, player.y, baseX, baseY, tipX, tipY, player.radius + 6)) {
-                        hitPlayer = true;
-                        break;
+                    for (let i = 0; i < sidesRender; i++) {
+                        let a = boss.angle + (i * Math.PI * 2 / sidesRender);
+                        let startX = boss.x + Math.cos(a) * boss.radius;
+                        let startY = boss.y + Math.sin(a) * boss.radius;
+                        let endX = boss.x + Math.cos(a) * maxDist;
+                        let endY = boss.y + Math.sin(a) * maxDist;
+
+                        if (isPointNearLine(player.x, player.y, startX, startY, endX, endY, player.radius + 4)) {
+                            hitBySpear = true;
+                            break;
+                        }
                     }
-                }
 
-                if (hitPlayer) {
-                    player.hp -= 35;
-                    createExplosion(player.x, player.y, "#00e5ff", 25);
-                    updateHUD();
-                    if (player.hp <= 0) {
-                        gameState = 'GAMEOVER';
-                        document.getElementById('gameover-screen').classList.remove('hidden');
-                    }
-                    boss.state = 'RETURNING';
-                    boss.timer = 0;
-                }
-
-                if (boss.timer >= 35) {
-                    // Если атака закончилась и игрока не задели -> ПРОМАХ БОССА!
-                    boss.hp -= 25; // Урон от промаха изнутри
-                    dodgeCount++;
-                    createExplosion(boss.x, boss.y, "#ff0055", 20);
-                    updateHUD();
-
-                    if (boss.hp <= 0) {
-                        boss.hp = 0;
-                        gameState = 'WIN';
-                        createExplosion(boss.x, boss.y, "#ff0055", 80);
-                        document.getElementById('win-desc').innerText = `${BOSSES[currentBossIndex].name} полностью разорван изнутри своими же копьями!`;
-                        document.getElementById('win-screen').classList.remove('hidden');
+                    if (hitBySpear) {
+                        player.hp -= 35;
+                        createExplosion(player.x, player.y, "#00e5ff", 30);
+                        updateHUD();
+                        if (player.hp <= 0) {
+                            gameState = 'GAMEOVER';
+                            document.getElementById('gameover-screen').classList.remove('hidden');
+                        }
                     } else {
-                        boss.state = 'RETURNING';
-                        boss.timer = 0;
+                        // Чистое уклонение -> Босс получает урон от промаха!
+                        boss.hp -= 25;
+                        dodgeCount++;
+                        createExplosion(boss.x, boss.y, "#ff0055", 30);
+                        updateHUD();
+
+                        if (boss.hp <= 0) {
+                            boss.hp = 0;
+                            gameState = 'WIN';
+                            createExplosion(boss.x, boss.y, "#ff0055", 100);
+                            document.getElementById('win-screen').classList.remove('hidden');
+                        }
                     }
                 }
-            } 
-            else if (boss.state === 'RETURNING') {
-                if (boss.timer >= 30) {
-                    boss.state = 'IDLE';
+            } else if (boss.state === 'ATTACKING') {
+                if (boss.timer >= 20) {
+                    boss.state = 'CHARGING';
                     boss.timer = 0;
                 }
             }
@@ -409,115 +386,123 @@
             // Обновление частиц
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life--;
+                p.x += p.vx; p.y += p.vy; p.life--;
                 if (p.life <= 0) particles.splice(i, 1);
             }
-        }
-
-        // Вспомогательная функция проверки столкновения с отрезком копья
-        function isPointNearLine(px, py, x1, y1, x2, y2, r) {
-            let A = px - x1;
-            let B = py - y1;
-            let C = x2 - x1;
-            let D = y2 - y1;
-            let dot = A * C + B * D;
-            let lenSq = C * C + D * D;
-            let param = lenSq !== 0 ? dot / lenSq : -1;
-            let xx, yy;
-            if (param < 0) { xx = x1; yy = y1; }
-            else if (param > 1) { xx = x2; yy = y2; }
-            else { xx = x1 + param * C; yy = y1 + param * D; }
-            let dx = px - xx;
-            let dy = py - yy;
-            return (dx * dx + dy * dy) < (r * r);
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Сетка фона
-            ctx.strokeStyle = '#0a1026';
+            // Теневая сетка фона
+            ctx.strokeStyle = '#090e1f';
             ctx.lineWidth = 1;
-            let step = 60;
-            for (let x = 0; x < canvas.width; x += step) {
+            for (let x = 0; x < canvas.width; x += 50) {
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
             }
-            for (let y = 0; y < canvas.height; y += step) {
+            for (let y = 0; y < canvas.height; y += 50) {
                 ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
             }
 
-            // Отрисовка Босса по центру с прикрепленными длинными копьями
+            // Отрисовка Босса (Сложная геометрическая сетка)
             if (gameState !== 'WIN') {
                 ctx.save();
                 ctx.translate(boss.x, boss.y);
                 ctx.rotate(boss.angle);
 
-                // Тело босса (Многоугольник)
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = '#ff0055';
-                ctx.strokeStyle = '#ff0055';
-                ctx.lineWidth = 4;
-                ctx.fillStyle = '#090d1a';
+                const sides = Math.min(boss.sides, 36);
+                const nodes = [];
 
-                ctx.beginPath();
-                const sidesRender = Math.min(boss.sides, 40);
-                for (let i = 0; i < sidesRender; i++) {
-                    const a = (i * Math.PI * 2) / sidesRender;
-                    const bx = Math.cos(a) * boss.radius;
-                    const by = Math.sin(a) * boss.radius;
-                    if (i === 0) ctx.moveTo(bx, by);
-                    else ctx.lineTo(bx, by);
-                }
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
+                // Внутренние слои сетки (как Мегагон / 7-cube)
+                for (let layer = 1; layer <= boss.layers; layer++) {
+                    const r = (boss.radius / boss.layers) * layer;
+                    const layerNodes = [];
 
-                // Длинные прикрепленные копья на каждой вершине
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 3;
-                for (let i = 0; i < sidesRender; i++) {
-                    const a = (i * Math.PI * 2) / sidesRender;
-                    const bx = Math.cos(a) * boss.radius;
-                    const by = Math.sin(a) * boss.radius;
-                    const tipX = Math.cos(a) * (boss.radius + boss.spearLen);
-                    const tipY = Math.sin(a) * (boss.radius + boss.spearLen);
+                    for (let i = 0; i < sides; i++) {
+                        const a = (i * Math.PI * 2) / sides;
+                        layerNodes.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
+                    }
+                    nodes.push(layerNodes);
 
+                    // Линии слоя
+                    ctx.strokeStyle = layer === boss.layers ? '#ff0055' : 'rgba(255, 0, 85, 0.4)';
+                    ctx.lineWidth = layer === boss.layers ? 3 : 1;
                     ctx.beginPath();
-                    ctx.moveTo(bx, by);
-                    ctx.lineTo(tipX, tipY);
+                    for (let i = 0; i < sides; i++) {
+                        if (i === 0) ctx.moveTo(layerNodes[i].x, layerNodes[i].y);
+                        else ctx.lineTo(layerNodes[i].x, layerNodes[i].y);
+                    }
+                    ctx.closePath();
                     ctx.stroke();
-
-                    // Острый наконечник копья
-                    ctx.fillStyle = '#00e5ff';
-                    ctx.beginPath();
-                    ctx.arc(tipX, tipY, 3, 0, Math.PI * 2);
-                    ctx.fill();
                 }
 
-                // Сердце босса в центре
+                // Перекрестные диагонали между всеми узлами
+                ctx.strokeStyle = 'rgba(255, 0, 85, 0.15)';
+                ctx.lineWidth = 1;
+                const outerNodes = nodes[nodes.length - 1];
+                for (let i = 0; i < outerNodes.length; i++) {
+                    for (let j = i + 1; j < outerNodes.length; j++) {
+                        ctx.beginPath();
+                        ctx.moveTo(outerNodes[i].x, outerNodes[i].y);
+                        ctx.lineTo(outerNodes[j].x, outerNodes[j].y);
+                        ctx.stroke();
+                    }
+                }
+
+                // Красные узлы (точки геометрии)
+                outerNodes.forEach(node => {
+                    ctx.fillStyle = '#ff0055';
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Пульсирующее ядро
                 ctx.fillStyle = '#ff0055';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ff0055';
                 ctx.beginPath();
-                ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                ctx.arc(0, 0, 15, 0, Math.PI * 2);
                 ctx.fill();
+
                 ctx.restore();
 
-                // Предупреждающие лучи во время зарядки
+                // ВЫСТРЕЛ КОПИЙ НА ВЕСЬ ЭКРАН
+                const maxDist = Math.max(window.innerWidth, window.innerHeight) * 1.5;
+
                 if (boss.state === 'CHARGING') {
+                    // Предупреждающие лучи
                     ctx.save();
-                    ctx.strokeStyle = `rgba(255, 0, 85, ${boss.timer / 40 * 0.7})`;
+                    ctx.strokeStyle = `rgba(255, 0, 85, ${boss.timer / boss.chargeTime * 0.6})`;
                     ctx.lineWidth = 2;
-                    ctx.setLineDash([6, 6]);
-                    ctx.beginPath();
-                    ctx.moveTo(boss.x, boss.y);
-                    ctx.lineTo(boss.x + Math.cos(boss.targetAngle) * 900, boss.y + Math.sin(boss.targetAngle) * 900);
-                    ctx.stroke();
+                    ctx.setLineDash([8, 8]);
+                    for (let i = 0; i < sides; i++) {
+                        let a = boss.angle + (i * Math.PI * 2 / sides);
+                        ctx.beginPath();
+                        ctx.moveTo(boss.x + Math.cos(a) * boss.radius, boss.y + Math.sin(a) * boss.radius);
+                        ctx.lineTo(boss.x + Math.cos(a) * maxDist, boss.y + Math.sin(a) * maxDist);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                } else if (boss.state === 'ATTACKING') {
+                    // Опасные колющие лучи на весь экран
+                    ctx.save();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#ff0055';
+                    ctx.lineWidth = 5;
+                    for (let i = 0; i < sides; i++) {
+                        let a = boss.angle + (i * Math.PI * 2 / sides);
+                        ctx.beginPath();
+                        ctx.moveTo(boss.x + Math.cos(a) * boss.radius, boss.y + Math.sin(a) * boss.radius);
+                        ctx.lineTo(boss.x + Math.cos(a) * maxDist, boss.y + Math.sin(a) * maxDist);
+                        ctx.stroke();
+                    }
                     ctx.restore();
                 }
             }
 
-            // Отрисовка Игрока (Круг)
+            // Отрисовка Игрока
             ctx.save();
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#00e5ff';
@@ -527,7 +512,7 @@
             ctx.fill();
             ctx.restore();
 
-            // Отрисовка частиц взрывов
+            // Отрисовка Частиц
             particles.forEach(p => {
                 ctx.fillStyle = p.color;
                 ctx.beginPath();
