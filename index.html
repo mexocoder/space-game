@@ -3,387 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Круг против Углов: Геометрическая Дуэль</title>
+    <title>Круг против Углов</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-        body, html {
-            width: 100%;
-            height: 100%;
-            background-color: #03050a;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-        }
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: radial-gradient(circle at center, #0a0f24 0%, #020307 100%);
-        }
-        canvas {
-            display: block;
-            background: #020307;
-            cursor: none;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body, html { width: 100%; height: 100%; background: #03050a; color: #fff; font-family: system-ui, sans-serif; overflow: hidden; }
+        #canvas { display: block; background: #020307; cursor: none; }
+        
         .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(3, 5, 10, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            gap: 20px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(3, 5, 10, 0.85); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 20px; z-index: 10;
         }
-        h1 {
-            font-size: 42px;
-            color: #00e5ff;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 20px rgba(0,229,255,0.5);
-            text-align: center;
-        }
-        p {
-            color: #8a9bb8;
-            font-size: 16px;
-            max-width: 550px;
-            text-align: center;
-            line-height: 1.5;
-        }
+        h1 { font-size: 42px; color: #00e5ff; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 20px rgba(0,229,255,0.5); }
+        p { color: #8a9bb8; max-width: 500px; text-align: center; line-height: 1.5; }
+        
         .btn {
-            background: #00e5ff;
-            color: #03050a;
-            border: none;
-            padding: 16px 45px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.2s;
-            box-shadow: 0 0 20px rgba(0,229,255,0.4);
+            background: #00e5ff; color: #03050a; border: none; padding: 16px 40px;
+            font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer;
+            text-transform: uppercase; transition: all 0.2s; box-shadow: 0 0 20px rgba(0,229,255,0.4);
         }
-        .btn:hover {
-            background: #4de8ff;
-            box-shadow: 0 0 35px rgba(0,229,255,0.8);
-            transform: scale(1.05);
-        }
-        .btn-danger {
-            background: #ff0055;
-            color: #fff;
-            box-shadow: 0 0 20px rgba(255,0,85,0.4);
-        }
-        .btn-danger:hover {
-            background: #ff2a75;
-            box-shadow: 0 0 35px rgba(255,0,85,0.8);
-        }
-        .hud {
-            position: absolute;
-            top: 25px;
-            left: 25px;
-            display: flex;
-            gap: 15px;
-            pointer-events: none;
-        }
-        .hud-card {
-            background: rgba(9, 13, 26, 0.85);
-            border: 1px solid #1a264a;
-            padding: 12px 20px;
-            border-radius: 8px;
-            backdrop-filter: blur(5px);
-        }
-        .hud-title {
-            font-size: 11px;
-            color: #64748b;
-            text-transform: uppercase;
-        }
-        .hud-value {
-            font-size: 22px;
-            font-weight: bold;
-            color: #00e5ff;
-        }
+        .btn:hover { background: #4de8ff; transform: scale(1.05); }
+        .btn-danger { background: #ff0055; color: #fff; box-shadow: 0 0 20px rgba(255,0,85,0.4); }
+
+        .hud { position: absolute; top: 20px; left: 20px; display: flex; gap: 15px; pointer-events: none; }
+        .card { background: rgba(9, 13, 26, 0.85); border: 1px solid #1a264a; padding: 10px 18px; border-radius: 8px; }
+        .card-title { font-size: 11px; color: #64748b; text-transform: uppercase; }
+        .card-val { font-size: 22px; font-weight: bold; color: #00e5ff; }
+
         .boss-hud {
-            position: absolute;
-            top: 25px;
-            right: 25px;
-            width: 320px;
-            background: rgba(9, 13, 26, 0.85);
-            border: 1px solid #1a264a;
-            padding: 15px;
-            border-radius: 8px;
-            backdrop-filter: blur(5px);
-            pointer-events: none;
+            position: absolute; top: 20px; right: 20px; width: 300px;
+            background: rgba(9, 13, 26, 0.85); border: 1px solid #1a264a; padding: 12px; border-radius: 8px; pointer-events: none;
         }
-        .hp-bar {
-            background: #1a264a;
-            height: 10px;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-        .hp-fill {
-            height: 100%;
-            background: #ff0055;
-            width: 100%;
-            transition: width 0.2s;
-            box-shadow: 0 0 10px #ff0055;
-        }
+        .hp-bar { background: #1a264a; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 6px; }
+        .hp-fill { height: 100%; background: #ff0055; width: 100%; transition: width 0.2s; box-shadow: 0 0 10px #ff0055; }
+        
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <!-- Главное меню -->
-        <div id="main-menu" class="overlay">
-            <h1>Круг против Углов</h1>
-            <p>Победи геометрию с помощью реакции и инерции. Опасны не только вылетающие на весь экран лучи-копья, но и сам центр босса!</p>
-            <button class="btn" onclick="startGame()">Начать игру</button>
-        </div>
+    <div id="menu" class="overlay">
+        <h1>Круг против Углов</h1>
+        <p>Управляй Кругом курсором мыши. Избегай длинных пик во весь экран и не касайся тела босса в центре!</p>
+        <button class="btn" onclick="startLevel(0)">Начать игру</button>
+    </div>
 
-        <!-- Экран победы -->
-        <div id="win-screen" class="overlay hidden">
-            <h1>Структура Разрушена!</h1>
-            <p id="win-desc">Босс разорван собственным переизбытком энергии.</p>
-            <button class="btn" onclick="nextLevel()">Следующий Уровень</button>
-        </div>
+    <div id="win" class="overlay hidden">
+        <h1>Босс разорван!</h1>
+        <p>Ты увернулся от всех атак и заставил структуру сломаться изнутри.</p>
+        <button class="btn" onclick="nextLevel()">Следующий Босс</button>
+    </div>
 
-        <!-- Экран поражения -->
-        <div id="gameover-screen" class="overlay hidden">
-            <h1 style="color:#ff0055;">Уничтожен!</h1>
-            <p>Тебя проткнуло гигантскими копьями или ты задел ядро босса.</p>
-            <button class="btn btn-danger" onclick="startGame()">Попробовать Снова</button>
-        </div>
+    <div id="gameover" class="overlay hidden">
+        <h1 style="color:#ff0055;">Уничтожен</h1>
+        <p>Острые копья или ядро босса оказались смертельными.</p>
+        <button class="btn btn-danger" onclick="startLevel(currentIdx)">Попробовать снова</button>
+    </div>
 
-        <canvas id="canvas"></canvas>
+    <canvas id="canvas"></canvas>
 
-        <div class="hud">
-            <div class="hud-card">
-                <div class="hud-title">Здоровье Круга</div>
-                <div class="hud-value" id="player-hp">100%</div>
-            </div>
-            <div class="hud-card">
-                <div class="hud-title">Уклонений</div>
-                <div class="hud-value" id="dodge-count">0</div>
-            </div>
+    <div class="hud">
+        <div class="card">
+            <div class="card-title">Здоровье Круга</div>
+            <div class="card-val" id="player-hp">100%</div>
         </div>
+        <div class="card">
+            <div class="card-title">Уклонений</div>
+            <div class="card-val" id="dodges">0</div>
+        </div>
+    </div>
 
-        <div class="boss-hud">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size: 13px; font-weight: bold; color:#ff0055;" id="boss-name">БОСС</span>
-                <span style="font-size: 12px; color: #ff0055;" id="boss-hp-text">100%</span>
-            </div>
-            <div class="hp-bar">
-                <div class="hp-fill" id="boss-hp-fill"></div>
-            </div>
+    <div class="boss-hud">
+        <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:12px; font-weight:bold; color:#ff0055;" id="boss-name">БОСС</span>
+            <span style="font-size:12px; color:#ff0055;" id="boss-hp">100%</span>
         </div>
+        <div class="hp-bar"><div class="hp-fill" id="hp-fill"></div></div>
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        function resizeCanvas() {
+        function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        window.addEventListener('resize', resize);
+        resize();
 
-        // Настройки уровней и боссов-сеток
         const BOSSES = [
-            { name: "1. ТРЕУГОЛЬНИК (3 Угла)", sides: 3, radius: 70, chargeTime: 80, layers: 2 },
-            { name: "2. КВАДРАТ-ГРАФ (4 Угла)", sides: 4, radius: 80, chargeTime: 70, layers: 2 },
-            { name: "3. ПЯТИУГОЛЬНИК (5 Углов)", sides: 5, radius: 90, chargeTime: 65, layers: 3 },
-            { name: "4. ШЕСТИУГОЛЬНЫЙ СИМПЛЕКС", sides: 6, radius: 100, chargeTime: 60, layers: 3 },
-            { name: "5. ДЕКАГОН (10 Углов)", sides: 10, radius: 110, chargeTime: 50, layers: 4 },
-            { name: "6. ИКОСАГОН (20 Углов)", sides: 20, radius: 120, chargeTime: 40, layers: 4 },
-            { name: "7. ГЕКАТОНГОН (100 Углов)", sides: 100, radius: 130, chargeTime: 30, layers: 5 },
-            { name: "8. МЕГАГОН (Священный Граф)", sides: 360, radius: 140, chargeTime: 25, layers: 6 }
+            { name: "1. ТРЕУГОЛЬНИК (3 Угла)", sides: 3, r: 70, layers: 2, charge: 70 },
+            { name: "2. КВАДРАТ (4 Угла)", sides: 4, r: 80, layers: 2, charge: 60 },
+            { name: "3. ПЯТИУГОЛЬНИК (5 Углов)", sides: 5, r: 90, layers: 3, charge: 50 },
+            { name: "4. ШЕСТИУГОЛЬНИК (6 Углов)", sides: 6, r: 100, layers: 3, charge: 45 },
+            { name: "5. ДЕКАГОН (10 Углов)", sides: 10, r: 110, layers: 4, charge: 40 },
+            { name: "6. ИКОСАГОН (20 Углов)", sides: 20, r: 120, layers: 4, charge: 35 },
+            { name: "7. ГЕКАТОНГОН (100 Углов)", sides: 100, r: 130, layers: 5, charge: 25 },
+            { name: "8. МЕГАГОН (Священный Граф)", sides: 360, r: 140, layers: 6, charge: 20 }
         ];
 
-        let currentBossIndex = 0;
-        let gameState = 'MENU';
+        let currentIdx = 0;
+        let isPlaying = false;
 
-        let player = { x: 0, y: 0, radius: 12, hp: 100, speed: 7.5 };
-        let boss = { x: 0, y: 0, radius: 80, sides: 3, angle: 0, hp: 100, state: 'CHARGING', timer: 0 };
+        let player = { x: 200, y: 200, r: 12, hp: 100 };
+        let boss = { x: 0, y: 0, r: 80, sides: 3, layers: 2, angle: 0, hp: 100, state: 'CHARGING', timer: 0, charge: 70 };
         let particles = [];
-        let mouseX = window.innerWidth / 4;
-        let mouseY = window.innerHeight / 2;
-        let dodgeCount = 0;
+        let dodges = 0;
+
+        let targetX = 200;
+        let targetY = 200;
 
         window.addEventListener('mousemove', e => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
+            targetX = e.clientX;
+            targetY = e.clientY;
         });
 
-        function startGame() {
-            document.getElementById('main-menu').classList.add('hidden');
-            document.getElementById('win-screen').classList.add('hidden');
-            document.getElementById('gameover-screen').classList.add('hidden');
-            
-            initLevel(currentBossIndex);
-            gameState = 'PLAYING';
-        }
+        function startLevel(idx) {
+            currentIdx = idx;
+            const b = BOSSES[idx];
 
-        function initLevel(idx) {
-            const bData = BOSSES[idx];
-            player.x = window.innerWidth / 5;
-            player.y = window.innerHeight / 2;
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('win').classList.add('hidden');
+            document.getElementById('gameover').classList.add('hidden');
+
+            player.x = canvas.width / 5;
+            player.y = canvas.height / 2;
+            targetX = player.x;
+            targetY = player.y;
             player.hp = 100;
-            dodgeCount = 0;
+            dodges = 0;
 
-            boss.x = window.innerWidth / 2;
-            boss.y = window.innerHeight / 2;
-            boss.sides = bData.sides;
-            boss.radius = bData.radius;
-            boss.chargeTime = bData.chargeTime;
-            boss.layers = bData.layers;
+            boss.x = canvas.width / 2;
+            boss.y = canvas.height / 2;
+            boss.r = b.r;
+            boss.sides = b.sides;
+            boss.layers = b.layers;
+            boss.charge = b.charge;
             boss.hp = 100;
             boss.state = 'CHARGING';
             boss.timer = 0;
             boss.angle = 0;
 
             particles = [];
-            updateHUD();
+            isPlaying = true;
+            updateUI();
         }
 
         function nextLevel() {
-            currentBossIndex = (currentBossIndex + 1) % BOSSES.length;
-            startGame();
+            startLevel((currentIdx + 1) % BOSSES.length);
         }
 
-        function updateHUD() {
-            document.getElementById('player-hp').innerText = `${Math.max(0, player.hp)}%`;
-            document.getElementById('dodge-count').innerText = dodgeCount;
-            document.getElementById('boss-name').innerText = BOSSES[currentBossIndex].name;
-            document.getElementById('boss-hp-text').innerText = `${Math.max(0, boss.hp)}%`;
-            document.getElementById('boss-hp-fill').style.width = `${Math.max(0, boss.hp)}%`;
+        function updateUI() {
+            document.getElementById('player-hp').innerText = Math.max(0, player.hp) + '%';
+            document.getElementById('dodges').innerText = dodges;
+            document.getElementById('boss-name').innerText = BOSSES[currentIdx].name;
+            document.getElementById('boss-hp').innerText = Math.max(0, boss.hp) + '%';
+            document.getElementById('hp-fill').style.width = Math.max(0, boss.hp) + '%';
         }
 
-        function createExplosion(x, y, color, count) {
+        function addExplosion(x, y, color, count) {
             for (let i = 0; i < count; i++) {
-                const ang = Math.random() * Math.PI * 2;
-                const spd = Math.random() * 12 + 2;
-                particles.push({
-                    x: x, y: y,
-                    vx: Math.cos(ang) * spd,
-                    vy: Math.sin(ang) * spd,
-                    life: 45,
-                    color: color,
-                    size: Math.random() * 4 + 2
-                });
+                let a = Math.random() * Math.PI * 2;
+                let s = Math.random() * 8 + 2;
+                particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 30, color });
             }
         }
 
-        function isPointNearLine(px, py, x1, y1, x2, y2, r) {
+        function isNearLine(px, py, x1, y1, x2, y2, r) {
             let A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
             let dot = A * C + B * D;
             let lenSq = C * C + D * D;
             let param = lenSq !== 0 ? dot / lenSq : -1;
-            let xx, yy;
-            if (param < 0) { xx = x1; yy = y1; }
-            else if (param > 1) { xx = x2; yy = y2; }
-            else { xx = x1 + param * C; yy = y1 + param * D; }
-            let dx = px - xx, dy = py - yy;
-            return (dx * dx + dy * dy) < (r * r);
+            let xx = param < 0 ? x1 : (param > 1 ? x2 : x1 + param * C);
+            let yy = param < 0 ? y1 : (param > 1 ? y2 : y1 + param * D);
+            return (px - xx) ** 2 + (py - yy) ** 2 < r ** 2;
         }
 
         function update() {
-            if (gameState !== 'PLAYING') return;
+            if (!isPlaying) return;
 
-            // Плавное следование за курсором
-            let dx = mouseX - player.x;
-            let dy = mouseY - player.y;
-            let dist = Math.hypot(dx, dy);
-            if (dist > 1) {
-                player.x += (dx / dist) * Math.min(player.speed, dist);
-                player.y += (dy / dist) * Math.min(player.speed, dist);
-            }
+            // Движение игрока
+            player.x += (targetX - player.x) * 0.2;
+            player.y += (targetY - player.y) * 0.2;
 
-            // ПРОВЕРКА: Смертельная зона в центре (Тело Босса)
-            let distToBossCenter = Math.hypot(player.x - boss.x, player.y - boss.y);
-            if (distToBossCenter < boss.radius + player.radius) {
-                player.hp -= 2; // Урон от касания тела босса
-                createExplosion(player.x, player.y, "#ff0055", 3);
-                updateHUD();
+            // Урон в центре от тела босса
+            let distToCenter = Math.hypot(player.x - boss.x, player.y - boss.y);
+            if (distToCenter < boss.r + player.r) {
+                player.hp -= 2;
+                addExplosion(player.x, player.y, "#ff0055", 2);
+                updateUI();
                 if (player.hp <= 0) {
-                    gameState = 'GAMEOVER';
-                    document.getElementById('gameover-screen').classList.remove('hidden');
+                    isPlaying = false;
+                    document.getElementById('gameover').classList.remove('hidden');
                 }
             }
 
-            // Фазы работы босса
+            // Фазы босса
             boss.timer++;
-            boss.angle += 0.01; // Вращение босса
+            boss.angle += 0.01;
 
             if (boss.state === 'CHARGING') {
-                if (boss.timer >= boss.chargeTime) {
+                if (boss.timer >= boss.charge) {
                     boss.state = 'ATTACKING';
                     boss.timer = 0;
 
-                    // Проверяем, проткнули ли копья игрока
-                    let hitBySpear = false;
-                    const sidesRender = Math.min(boss.sides, 36);
-                    const maxDist = Math.max(window.innerWidth, window.innerHeight) * 1.5;
+                    let hit = false;
+                    let sides = Math.min(boss.sides, 36);
+                    let maxLen = Math.max(canvas.width, canvas.height) * 1.5;
 
-                    for (let i = 0; i < sidesRender; i++) {
-                        let a = boss.angle + (i * Math.PI * 2 / sidesRender);
-                        let startX = boss.x + Math.cos(a) * boss.radius;
-                        let startY = boss.y + Math.sin(a) * boss.radius;
-                        let endX = boss.x + Math.cos(a) * maxDist;
-                        let endY = boss.y + Math.sin(a) * maxDist;
+                    for (let i = 0; i < sides; i++) {
+                        let a = boss.angle + (i * Math.PI * 2 / sides);
+                        let x1 = boss.x + Math.cos(a) * boss.r;
+                        let y1 = boss.y + Math.sin(a) * boss.r;
+                        let x2 = boss.x + Math.cos(a) * maxLen;
+                        let y2 = boss.y + Math.sin(a) * maxLen;
 
-                        if (isPointNearLine(player.x, player.y, startX, startY, endX, endY, player.radius + 4)) {
-                            hitBySpear = true;
+                        if (isNearLine(player.x, player.y, x1, y1, x2, y2, player.r + 5)) {
+                            hit = true;
                             break;
                         }
                     }
 
-                    if (hitBySpear) {
+                    if (hit) {
                         player.hp -= 35;
-                        createExplosion(player.x, player.y, "#00e5ff", 30);
-                        updateHUD();
+                        addExplosion(player.x, player.y, "#00e5ff", 20);
+                        updateUI();
                         if (player.hp <= 0) {
-                            gameState = 'GAMEOVER';
-                            document.getElementById('gameover-screen').classList.remove('hidden');
+                            isPlaying = false;
+                            document.getElementById('gameover').classList.remove('hidden');
                         }
                     } else {
-                        // Чистое уклонение -> Босс получает урон от промаха!
                         boss.hp -= 25;
-                        dodgeCount++;
-                        createExplosion(boss.x, boss.y, "#ff0055", 30);
-                        updateHUD();
+                        dodges++;
+                        addExplosion(boss.x, boss.y, "#ff0055", 25);
+                        updateUI();
 
                         if (boss.hp <= 0) {
                             boss.hp = 0;
-                            gameState = 'WIN';
-                            createExplosion(boss.x, boss.y, "#ff0055", 100);
-                            document.getElementById('win-screen').classList.remove('hidden');
+                            isPlaying = false;
+                            document.getElementById('win').classList.remove('hidden');
                         }
                     }
                 }
             } else if (boss.state === 'ATTACKING') {
-                if (boss.timer >= 20) {
+                if (boss.timer >= 15) {
                     boss.state = 'CHARGING';
                     boss.timer = 0;
                 }
             }
 
-            // Обновление частиц
+            // Частицы
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
                 p.x += p.vx; p.y += p.vy; p.life--;
@@ -394,8 +264,8 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Теневая сетка фона
-            ctx.strokeStyle = '#090e1f';
+            // Сетка
+            ctx.strokeStyle = '#0a1026';
             ctx.lineWidth = 1;
             for (let x = 0; x < canvas.width; x += 50) {
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
@@ -404,42 +274,35 @@
                 ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
             }
 
-            // Отрисовка Босса (Сложная геометрическая сетка)
-            if (gameState !== 'WIN') {
+            // Рисуем Босса
+            if (isPlaying || document.getElementById('win').classList.contains('hidden')) {
                 ctx.save();
                 ctx.translate(boss.x, boss.y);
                 ctx.rotate(boss.angle);
 
-                const sides = Math.min(boss.sides, 36);
-                const nodes = [];
+                let sides = Math.min(boss.sides, 36);
+                let outerNodes = [];
 
-                // Внутренние слои сетки (как Мегагон / 7-cube)
-                for (let layer = 1; layer <= boss.layers; layer++) {
-                    const r = (boss.radius / boss.layers) * layer;
-                    const layerNodes = [];
-
+                for (let l = 1; l <= boss.layers; l++) {
+                    let r = (boss.r / boss.layers) * l;
+                    let nodes = [];
                     for (let i = 0; i < sides; i++) {
-                        const a = (i * Math.PI * 2) / sides;
-                        layerNodes.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
+                        let a = (i * Math.PI * 2) / sides;
+                        nodes.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
                     }
-                    nodes.push(layerNodes);
+                    if (l === boss.layers) outerNodes = nodes;
 
-                    // Линии слоя
-                    ctx.strokeStyle = layer === boss.layers ? '#ff0055' : 'rgba(255, 0, 85, 0.4)';
-                    ctx.lineWidth = layer === boss.layers ? 3 : 1;
+                    ctx.strokeStyle = l === boss.layers ? '#ff0055' : 'rgba(255, 0, 85, 0.3)';
+                    ctx.lineWidth = l === boss.layers ? 3 : 1;
                     ctx.beginPath();
-                    for (let i = 0; i < sides; i++) {
-                        if (i === 0) ctx.moveTo(layerNodes[i].x, layerNodes[i].y);
-                        else ctx.lineTo(layerNodes[i].x, layerNodes[i].y);
-                    }
+                    nodes.forEach((n, i) => i === 0 ? ctx.moveTo(n.x, n.y) : ctx.lineTo(n.x, n.y));
                     ctx.closePath();
                     ctx.stroke();
                 }
 
-                // Перекрестные диагонали между всеми узлами
-                ctx.strokeStyle = 'rgba(255, 0, 85, 0.15)';
+                // Перекрестные связи сетки
+                ctx.strokeStyle = 'rgba(255, 0, 85, 0.12)';
                 ctx.lineWidth = 1;
-                const outerNodes = nodes[nodes.length - 1];
                 for (let i = 0; i < outerNodes.length; i++) {
                     for (let j = i + 1; j < outerNodes.length; j++) {
                         ctx.beginPath();
@@ -449,75 +312,57 @@
                     }
                 }
 
-                // Красные узлы (точки геометрии)
-                outerNodes.forEach(node => {
+                // Узлы
+                outerNodes.forEach(n => {
                     ctx.fillStyle = '#ff0055';
-                    ctx.beginPath();
-                    ctx.arc(node.x, node.y, 4, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.beginPath(); ctx.arc(n.x, n.y, 4, 0, Math.PI * 2); ctx.fill();
                 });
 
-                // Пульсирующее ядро
+                // Ядро
                 ctx.fillStyle = '#ff0055';
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = '#ff0055';
-                ctx.beginPath();
-                ctx.arc(0, 0, 15, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.shadowBlur = 15; ctx.shadowColor = '#ff0055';
+                ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill();
 
                 ctx.restore();
 
-                // ВЫСТРЕЛ КОПИЙ НА ВЕСЬ ЭКРАН
-                const maxDist = Math.max(window.innerWidth, window.innerHeight) * 1.5;
+                // Отрисовка лучей-копий на весь экран
+                let maxLen = Math.max(canvas.width, canvas.height) * 1.5;
 
                 if (boss.state === 'CHARGING') {
-                    // Предупреждающие лучи
-                    ctx.save();
-                    ctx.strokeStyle = `rgba(255, 0, 85, ${boss.timer / boss.chargeTime * 0.6})`;
+                    ctx.strokeStyle = `rgba(255, 0, 85, ${boss.timer / boss.charge * 0.5})`;
                     ctx.lineWidth = 2;
                     ctx.setLineDash([8, 8]);
                     for (let i = 0; i < sides; i++) {
                         let a = boss.angle + (i * Math.PI * 2 / sides);
                         ctx.beginPath();
-                        ctx.moveTo(boss.x + Math.cos(a) * boss.radius, boss.y + Math.sin(a) * boss.radius);
-                        ctx.lineTo(boss.x + Math.cos(a) * maxDist, boss.y + Math.sin(a) * maxDist);
+                        ctx.moveTo(boss.x + Math.cos(a) * boss.r, boss.y + Math.sin(a) * boss.r);
+                        ctx.lineTo(boss.x + Math.cos(a) * maxLen, boss.y + Math.sin(a) * maxLen);
                         ctx.stroke();
                     }
-                    ctx.restore();
+                    ctx.setLineDash([]);
                 } else if (boss.state === 'ATTACKING') {
-                    // Опасные колющие лучи на весь экран
-                    ctx.save();
                     ctx.strokeStyle = '#ffffff';
-                    ctx.shadowBlur = 20;
-                    ctx.shadowColor = '#ff0055';
+                    ctx.shadowBlur = 20; ctx.shadowColor = '#ff0055';
                     ctx.lineWidth = 5;
                     for (let i = 0; i < sides; i++) {
                         let a = boss.angle + (i * Math.PI * 2 / sides);
                         ctx.beginPath();
-                        ctx.moveTo(boss.x + Math.cos(a) * boss.radius, boss.y + Math.sin(a) * boss.radius);
-                        ctx.lineTo(boss.x + Math.cos(a) * maxDist, boss.y + Math.sin(a) * maxDist);
+                        ctx.moveTo(boss.x + Math.cos(a) * boss.r, boss.y + Math.sin(a) * boss.r);
+                        ctx.lineTo(boss.x + Math.cos(a) * maxLen, boss.y + Math.sin(a) * maxLen);
                         ctx.stroke();
                     }
-                    ctx.restore();
                 }
             }
 
-            // Отрисовка Игрока
-            ctx.save();
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#00e5ff';
+            // Игрок (Круг)
             ctx.fillStyle = '#00e5ff';
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
+            ctx.shadowBlur = 15; ctx.shadowColor = '#00e5ff';
+            ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2); ctx.fill();
 
-            // Отрисовка Частиц
+            // Частицы
             particles.forEach(p => {
                 ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
             });
         }
 
